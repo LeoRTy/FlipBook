@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Catálogo Flipbook com StPageFlip</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #eaeaea;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+
+    #book {
+      width: 100vw;
+      max-width: 1200px;
+      aspect-ratio: 2 / 1.414; /* Duas páginas A4 */
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      background: white;
+      margin-bottom: 20px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+    }
+
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 40px;
+      font-size: 100px;
+      border: none;
+      background: #333;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #555;
+    }
+  </style>
+</head>
+<body>
+  <div id="book"></div>
+
+  <div class="controls">
+    <button onclick="goToFirst()">⏮️</button>
+    <button onclick="prev()">◀️</button>
+    <button onclick="next()">▶️</button>
+    <button onclick="goToLast()">⏭️</button>
+    <button onclick="toggleFullscreen()">🔍</button>
+  </div>
+
+  <!-- Biblioteca StPageFlip -->
+  <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
+
+  <script>
+    const imagens = [
+      "imagens/capa.jpg",
+      "imagens/vaso01.jpg",
+      "imagens/vaso02.jpg",
+      "imagens/vaso03.jpg",
+      "imagens/vaso04.jpg",
+      "imagens/vaso05.jpg",
+      "imagens/vaso06.jpg",
+      "imagens/vaso07.jpg",
+      "imagens/vaso08.jpg",
+      "imagens/vaso09.jpg",
+      "imagens/vaso10.jpg",
+      "imagens/vaso11.jpg",
+      "imagens/vaso12.jpg",
+      "imagens/vaso13.jpg",
+      "imagens/vaso14.jpg",
+      "imagens/vaso15.jpg",
+      "imagens/vaso16.jpg",
+      "imagens/vaso17.jpg",
+      "imagens/vaso18.jpg",
+      "imagens/vaso19.jpg",
+      "imagens/vaso20.jpg",
+      "imagens/vaso21.jpg",
+      "imagens/vaso22.jpg",
+      "imagens/vaso23.jpg",
+      "imagens/vaso24.jpg",
+      "imagens/vaso25.jpg",
+      "imagens/vaso26.jpg",
+      "imagens/fim.jpg"
+    ];
+
+    const bookElement = document.getElementById("book");
+
+    const pageFlip = new St.PageFlip(bookElement, {
+      width: 595,   // A4 ~210mm
+      height: 842,  // A4 ~297mm
+      size: 'stretch',
+      minWidth: 315,
+      minHeight: 420,
+      maxWidth: 2000,
+      maxHeight: 2600,
+      drawShadow: true,
+      flippingTime: 800,
+      showCover: true,
+      useMouseEvents: true,
+      mobileScrollSupport: false
+    });
+
+    pageFlip.loadFromImages(imagens);
+
+    // 🔹 Controles extras
+    function next() {
+      pageFlip.flipNext();
+    }
+
+    function prev() {
+      pageFlip.flipPrev();
+    }
+
+    function goToFirst() {
+      pageFlip.flip(0);
+    }
+
+    function goToLast() {
+      pageFlip.flip(imagens.length - 1);
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        bookElement.requestFullscreen().catch(err => {
+          alert(`Erro ao ativar fullscreen: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // 🔹 Atalhos de teclado
+    document.addEventListener("keydown", (e) => {
+      switch (e.key) {
+        case "ArrowRight":
+          next();
+          break;
+        case "ArrowLeft":
+          prev();
+          break;
+        case "Home":
+          goToFirst();
+          break;
+        case "End":
+          goToLast();
+          break;
+        case "Escape":
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
+          }
+          break;
+      }
+    });
+  </script>
+</body>
+</html>
