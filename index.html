@@ -27,28 +27,36 @@
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
       background: white;
       margin-bottom: 20px;
+      position: relative;
+      z-index: 1; /* Livro fica atrás */
     }
 
     .controls {
+      position: relative;
+      z-index: 2; /* Botões ficam na frente */
       display: flex;
       gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 10px;
     }
 
     button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1em 2em;       /* proporcional ao texto */
-    font-size: clamp(16px, 2vw, 22px); 
-    border: none;
-    background: #333;
-    color: #fff;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 70px;
+      min-height: 70px;
+      padding: 1em 2em;
+      font-size: clamp(20px, 2vw, 28px);
+      border: none;
+      background: #333;
+      color: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+      user-select: none;
     }
-
-
 
     button:hover {
       background: #555;
@@ -71,34 +79,34 @@
 
   <script>
     const imagens = [
-      "imagens/capa.jpg",
-      "imagens/vaso01.jpg",
-      "imagens/vaso02.jpg",
-      "imagens/vaso03.jpg",
-      "imagens/vaso04.jpg",
-      "imagens/vaso05.jpg",
-      "imagens/vaso06.jpg",
-      "imagens/vaso07.jpg",
-      "imagens/vaso08.jpg",
-      "imagens/vaso09.jpg",
-      "imagens/vaso10.jpg",
-      "imagens/vaso11.jpg",
-      "imagens/vaso12.jpg",
-      "imagens/vaso13.jpg",
-      "imagens/vaso14.jpg",
-      "imagens/vaso15.jpg",
-      "imagens/vaso16.jpg",
-      "imagens/vaso17.jpg",
-      "imagens/vaso18.jpg",
-      "imagens/vaso19.jpg",
-      "imagens/vaso20.jpg",
-      "imagens/vaso21.jpg",
-      "imagens/vaso22.jpg",
-      "imagens/vaso23.jpg",
-      "imagens/vaso24.jpg",
-      "imagens/vaso25.jpg",
-      "imagens/vaso26.jpg",
-      "imagens/fim.jpg"
+      "./imagens/capa.jpg",
+      "./imagens/vaso01.jpg",
+      "./imagens/vaso02.jpg",
+      "./imagens/vaso03.jpg",
+      "./imagens/vaso04.jpg",
+      "./imagens/vaso05.jpg",
+      "./imagens/vaso06.jpg",
+      "./imagens/vaso07.jpg",
+      "./imagens/vaso08.jpg",
+      "./imagens/vaso09.jpg",
+      "./imagens/vaso10.jpg",
+      "./imagens/vaso11.jpg",
+      "./imagens/vaso12.jpg",
+      "./imagens/vaso13.jpg",
+      "./imagens/vaso14.jpg",
+      "./imagens/vaso15.jpg",
+      "./imagens/vaso16.jpg",
+      "./imagens/vaso17.jpg",
+      "./imagens/vaso18.jpg",
+      "./imagens/vaso19.jpg",
+      "./imagens/vaso20.jpg",
+      "./imagens/vaso21.jpg",
+      "./imagens/vaso22.jpg",
+      "./imagens/vaso23.jpg",
+      "./imagens/vaso24.jpg",
+      "./imagens/vaso25.jpg",
+      "./imagens/vaso26.jpg",
+      "./imagens/fim.jpg"
     ];
 
     const bookElement = document.getElementById("book");
