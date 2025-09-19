@@ -1,0 +1,58 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 20px;
+  background: #eaeaea;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  height: auto;
+  font-family: sans-serif;
+}
+
+#book {
+  width: 100vw;
+  max-width: 1200px;
+  aspect-ratio: 2 / 1.414; /* Duas páginas A4 */
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  background: white;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.controls {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 5px 5px;
+  font-size: clamp(20px, 2vw, 15px);
+  border: none;
+  background: #333;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+  user-select: none;
+}
+
+button:hover {
+  background: #555;
+}
