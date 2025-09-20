@@ -1,17 +1,17 @@
 // Lista de imagens do catálogo
 const imagens = [
-  "src/imagens/capa.jpg",
-  "src/imagens/vaso01.jpg",
-  "src/imagens/vaso02.jpg",
-  "src/imagens/vaso03.jpg",
-  "src/imagens/vaso04.jpg",
-  //"src/imagens/vaso05.jpg",
-  //"src/imagens/vaso06.jpg",
-  //"src/imagens/vaso07.jpg",
-  //"src/imagens/vaso08.jpg",
-  //"src/imagens/vaso09.jpg",
-  //"src/imagens/vaso10.jpg",
-  //"src/imagens/vaso11.jpg",
+  "./src/imagens/capa.jpg",
+  "./src/imagens/vaso01.jpg",
+  "./src/imagens/vaso02.jpg",
+  "./src/imagens/vaso03.jpg",
+  "./src/imagens/vaso04.jpg",
+  //"./src/imagens/vaso05.jpg",
+  //"./src/imagens/vaso06.jpg",
+  //"./src/imagens/vaso07.jpg",
+  //"./src/imagens/vaso08.jpg",
+  //"./src/imagens/vaso09.jpg",
+  //"./src/imagens/vaso10.jpg",
+  //"./src/imagens/vaso11.jpg",
 
 
   "src/imagens/fim.jpg"
@@ -105,4 +105,5 @@ if (isMobile) {
   window.goToLast = goToLast;
   window.toggleFullscreen = toggleFullscreen;
 }
+
 
