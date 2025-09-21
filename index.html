@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Catálogo Flipbook</title>
+
+  <!-- ============================
+       // Imagens → edite aqui
+       ============================ -->
+       
+  <script>
+    const imagens = [
+      "./imagens/capa.jpg",
+
+      "./imagens/vaso01.jpg",
+      "./imagens/vaso02.jpg",
+      "./imagens/vaso03.jpg",
+      "./imagens/vaso04.jpg",
+      
+      "./imagens/fim.jpg"
+    ];
+  </script>
+
+  <!-- // Styles -->
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #eaeaea;
+      overflow: hidden; /* sem rolagem no desktop */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: sans-serif;
+    }
+
+    #book {
+      display: flex;
+      width: 100%;
+      max-width: 1200px;
+      height: calc(100vh - 120px);
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      background: white;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .controls {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 35px;
+      min-height: 35px;
+      padding: 6px;
+      font-size: clamp(14px, 2vw, 18px);
+      border: none;
+      background: #333;
+      color: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+      user-select: none;
+    }
+
+    button:hover { background: #555; }
+
+    :fullscreen #book {
+      margin-top: 50px;
+      height: calc(100vh - 140px);
+    }
+
+    @media (max-width: 768px) {
+      .controls { display: none; }
+
+      body {
+        overflow-y: auto;
+        padding: 0;
+      }
+
+      #book {
+        width: 100%;
+        height: auto;
+        max-height: none;
+        display: block;
+        box-shadow: none;
+      }
+
+      #book img {
+        width: 100%;
+        height: auto;
+        display: block;
+        margin-bottom: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="viewer">
+    <div id="book"></div>
+
+    <div class="controls">
+      <button onclick="goToFirst()">⏮️</button>
+      <button onclick="prev()">◀️</button>
+      <button onclick="next()">▶️</button>
+      <button onclick="goToLast()">⏭️</button>
+      <button onclick="toggleFullscreen()">🔍</button>
+    </div>
+  </div>
+
+  <!-- Biblioteca StPageFlip -->
+  <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
+
+  <!-- // JS -->
+  <script>
+    const bookElement = document.getElementById("book");
+    let pageFlip = null;
+
+    function renderMobile() {
+      if (pageFlip && typeof pageFlip.destroy === "function") pageFlip.destroy();
+      pageFlip = null;
+      bookElement.innerHTML = "";
+
+      imagens.forEach(src => {
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = "";
+        img.style.width = "100%";
+        img.style.height = "auto";
+        img.style.display = "block";
+        img.style.marginBottom = "5px";
+        bookElement.appendChild(img);
+      });
+
+      delete window.next;
+      delete window.prev;
+      delete window.goToFirst;
+      delete window.goToLast;
+      delete window.toggleFullscreen;
+    }
+
+    function renderDesktop() {
+      bookElement.innerHTML = "";
+
+      pageFlip = new St.PageFlip(bookElement, {
+        width: 595,
+        height: 842,
+        size: "stretch",
+        minWidth: 800,
+        minHeight: 420,
+        maxWidth: 2000,
+        maxHeight: 2600,
+        drawShadow: true,
+        flippingTime: 800,
+        showCover: true,
+        useMouseEvents: true,
+        mobileScrollSupport: false,
+        usePortrait: false
+      });
+
+      pageFlip.loadFromImages(imagens);
+
+      function next() { pageFlip.flipNext(); }
+      function prev() { pageFlip.flipPrev(); }
+      function goToFirst() { pageFlip.flip(0); }
+      function goToLast() { pageFlip.flip(imagens.length - 1); }
+      function toggleFullscreen() {
+        const viewer = document.getElementById("viewer");
+        if (!document.fullscreenElement) {
+          viewer.requestFullscreen().catch(err => alert(`Erro ao ativar fullscreen: ${err.message}`));
+        } else {
+          document.exitFullscreen();
+        }
+      }
+
+      window.next = next;
+      window.prev = prev;
+      window.goToFirst = goToFirst;
+      window.goToLast = goToLast;
+      window.toggleFullscreen = toggleFullscreen;
+
+      document.onkeydown = (e) => {
+        switch (e.key) {
+          case "ArrowRight": next(); break;
+          case "ArrowLeft":  prev(); break;
+          case "Home":       goToFirst(); break;
+          case "End":        goToLast(); break;
+          case "Escape":
+            if (document.fullscreenElement) document.exitFullscreen();
+            break;
+        }
+      };
+    }
+
+    const mql = window.matchMedia("(max-width: 768px)");
+
+    function applyMode(isMobile) {
+      if (isMobile) renderMobile();
+      else renderDesktop();
+    }
+
+    applyMode(mql.matches);
+
+    if (mql.addEventListener) {
+      mql.addEventListener("change", e => applyMode(e.matches));
+    } else {
+      mql.addListener(e => applyMode(e.matches));
+    }
+  </script>
+</body>
+</html>
