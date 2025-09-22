@@ -8,7 +8,6 @@
   <!-- ============================
        // Imagens → edite aqui
        ============================ -->
-       
   <script>
     const imagens = [
       "./imagens/capa.jpg",
@@ -17,7 +16,7 @@
       "./imagens/img02.jpg",
       "./imagens/img03.jpg",
       "./imagens/img04.jpg",
-      
+
       "./imagens/fim.jpg"
     ];
   </script>
@@ -32,21 +31,29 @@
       background: #eaeaea;
       overflow: hidden; /* sem rolagem no desktop */
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
       font-family: sans-serif;
     }
 
+    /* Container principal */
+    #viewer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+    }
+
     #book {
       display: flex;
       width: 100%;
       max-width: 1200px;
-      height: calc(100vh - 120px);
+      height: calc(100vh - 100px); 
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
       background: white;
-      margin-bottom: 20px;
+      margin-bottom: 10px; 
       position: relative;
       z-index: 1;
     }
@@ -58,7 +65,7 @@
       gap: 8px;
       flex-wrap: wrap;
       justify-content: center;
-      margin-top: 2px;
+      margin-bottom: 4px;
     }
 
     button {
@@ -81,8 +88,27 @@
     button:hover { background: #555; }
 
     :fullscreen #book {
-      margin-top: 50px;
-      height: calc(100vh - 140px);
+      margin-top: 30px;
+      height: calc(100vh - 120px); 
+    }
+
+    /* ===== ASSINATURA ===== */
+    .signature {
+      margin-top: 0;
+      font-size: 11px;
+      color: #aaa;
+      text-align: center;
+      z-index: 9999;
+      pointer-events: auto;
+    }
+
+    .signature a {
+      color: #aaa;
+      text-decoration: none;
+    }
+
+    .signature a:hover {
+      color: #666;
     }
 
     @media (max-width: 768px) {
@@ -120,6 +146,12 @@
       <button onclick="next()">▶️</button>
       <button onclick="goToLast()">⏭️</button>
       <button onclick="toggleFullscreen()">🔍</button>
+    </div>
+      <br>
+    <div class="signature">
+      <a href="https://www.linkedin.com/in/leonardo-teixeira-3244a6143/" target="_blank">
+        Desenvolvido por Leonardo Teixeira
+      </a>
     </div>
   </div>
 
