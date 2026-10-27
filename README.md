@@ -4,6 +4,7 @@ Uma revista online para apresentar produtos, com efeito de folhear em 3D. Tudo e
 
 🔗 **Montar uma revista:** https://leorty.github.io/FlipBook/
 📖 **Ver uma revista pronta (exemplo):** https://leorty.github.io/FlipBook/exemplo.html
+⬇️ **Baixar o montador para usar offline:** https://leorty.github.io/FlipBook/catalogo-revista.html
 
 ## Como funciona
 
@@ -34,6 +35,7 @@ HTML5, CSS3 (transformações 3D, perspectiva, `backface-visibility`, variáveis
 
 ```
 index.html        editor + visualizador (arquivo único)
+catalogo-revista.html  cópia do montador para download
 exemplo.html      revista de exemplo já gerada pelo editor (marca fictícia)
 versao-antiga/    primeira versão do projeto, feita com StPageFlip
 ```
