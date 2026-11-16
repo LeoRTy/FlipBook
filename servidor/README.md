@@ -18,7 +18,7 @@ catálogo de outro computador.
   no Salvar (Ctrl+S também salva). **Redefinir** desfaz o que não foi salvo, com confirmação. Ao sair com alterações
   por salvar, o Montador pergunta antes. Se outra pessoa salvou o mesmo catálogo enquanto você editava, ele avisa.
 - **Ajuda na tela:** o "i" de cada tela abre um pop-up com o botão Entendi.
-- **Compartilhar** gera no servidor um arquivo HTML único, com as imagens embutidas. O cliente abre no celular ou no
+- **Compartilhar** gera no servidor um arquivo HTML único, com as imagens embutidas. A pessoa escolhe entre enviar por um aplicativo do aparelho ou baixar o arquivo. O cliente abre no celular ou no
   computador e folheia, sem login. O arquivo continua funcionando mesmo que o catálogo seja excluído depois.
 - **Papéis por pessoa:** leitor (vê, visualiza e compartilha), editor (cria, edita, duplica e exclui) e
   administrador (dá os papéis, convidando pelo e-mail).
@@ -95,7 +95,7 @@ abrir o Montador.
 node testes/teste_api.js
 ```
 
-Sobe um servidor descartável numa pasta temporária e confere 48 pontos: criar, salvar, enviar imagem, duplicar,
+Sobe um servidor descartável numa pasta temporária e confere 49 pontos: criar, salvar, enviar imagem, duplicar,
 excluir, gerar o arquivo do cliente, edição simultânea, papéis e recusas.
 
 ## Limites

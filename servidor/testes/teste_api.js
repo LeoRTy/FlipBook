@@ -157,6 +157,8 @@ async function testes() {
     confere("sem o cabeçalho de identificação, não entra", r.status === 401);
     r = await pedir(ANA, "GET", "/api/catalogos/id-invalido!!");
     confere("id inválido dá 404", r.status === 404);
+    r = await fetch(BASE + "/app.js");
+    confere("o Compartilhar oferece baixar o arquivo além de enviar por aplicativo", /Baixar o arquivo/.test(await r.text()));
 }
 
 const proc = spawn(process.execPath, [path.join(__dirname, "..", "server.js")], {

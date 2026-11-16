@@ -49,7 +49,7 @@ const AJUDA = {
   lista: ["Como funciona o Montador de Catálogo", "Aqui ficam os catálogos da empresa, sempre com as últimas edições.", [
     "<b>Novo catálogo</b> abre o editor em branco. O catálogo só passa a existir quando você clica em <b>Salvar</b>.",
     "<b>Editar</b> (ou clicar na capa) abre o catálogo para mexer. As alterações só valem depois do <b>Salvar</b>.",
-    "<b>Compartilhar</b> gera o arquivo para mandar ao cliente por WhatsApp ou e-mail. Ele abre e folheia, sem precisar de login.",
+    "<b>Compartilhar</b> gera o arquivo para mandar ao cliente por WhatsApp ou e-mail. Ele abre e folheia, sem precisar de login. Você escolhe entre <b>Enviar por aplicativo</b> e <b>Baixar o arquivo</b> (para abrir no seu computador ou mandar depois).",
     "<b>Duplicar</b> cria uma cópia, boa para fazer uma versão nova sem perder a antiga.",
     "<b>Excluir</b> apaga o catálogo e as imagens dele. Arquivos que você já mandou a clientes continuam funcionando.",
     "Os catálogos são de todos: quem tem acesso ao Montador vê e edita os mesmos."]],
@@ -409,9 +409,17 @@ async function compartilhar(id) {
   } catch (e) { toast(e.message); return; }
   const file = new File([blob], nome, { type: "text/html" });
   const mb = (file.size / 1048576).toFixed(1).replace(".", ",");
-  let enviado = false;
+  // Onde o aparelho sabe enviar arquivos (celular, Windows), a pessoa escolhe: enviar por um aplicativo ou só baixar.
+  let enviado = false, querEnviar = false;
+  try { querEnviar = Boolean(navigator.canShare && navigator.canShare({ files: [file] })); } catch { querEnviar = false; }
+  if (querEnviar) {
+    const i = await perguntar("Como você quer o arquivo?", `O arquivo <b>${esc(nome)}</b> (${mb} MB) está pronto. <b>Enviar</b> abre os aplicativos deste aparelho (WhatsApp, e-mail e outros). <b>Baixar</b> guarda o arquivo aqui, para abrir no navegador ou mandar depois.`,
+      [{ texto: "Cancelar" }, { texto: "Baixar o arquivo" }, { texto: "Enviar por aplicativo", forte: true }]);
+    if (i < 1) return;
+    querEnviar = i === 2;
+  }
   try {
-    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: nome }); enviado = true; }
+    if (querEnviar) { await navigator.share({ files: [file], title: nome }); enviado = true; }
   } catch (e) { if (e && e.name === "AbortError") return; }
   if (!enviado) {
     const url = URL.createObjectURL(file), a = document.createElement("a");

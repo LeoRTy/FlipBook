@@ -84,6 +84,7 @@ input[type=color]{width:64px;height:42px;border:1px solid var(--line);border-rad
 .modal-ic{width:52px;height:52px;border-radius:50%;background:#16a34a;color:#fff;display:grid;place-items:center;font-size:26px;margin:0 auto 12px}
 .modal-box h2{font-family:Fraunces,Georgia,serif;font-size:22px;margin-bottom:8px}
 .modal-box p{color:var(--muted);font-size:14px;line-height:1.55;margin-bottom:18px}
+.modal-acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 
 /* ---------- REVISTA (VISUALIZADOR) ---------- */
 .v{--vbg:#1f1c24;position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;color:#f4efe6;background:var(--vbg);background:radial-gradient(120% 90% at 50% 38%,color-mix(in srgb,var(--vbg) 78%,#fff) 0%,var(--vbg) 58%,color-mix(in srgb,var(--vbg) 65%,#000) 100%);overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
@@ -217,6 +218,17 @@ input[type=color]{width:64px;height:42px;border:1px solid var(--line);border-rad
     <h2>Catálogo pronto!</h2>
     <p id="modalText"></p>
     <button class="btn primary" id="modalOk">Entendi</button>
+  </div>
+</div>
+<div class="modal" id="modalShare" hidden>
+  <div class="modal-box">
+    <h2>Como você quer o arquivo?</h2>
+    <p id="modalShareText"></p>
+    <div class="modal-acts">
+      <button class="btn" data-share="cancelar">Cancelar</button>
+      <button class="btn" data-share="baixar">Baixar o arquivo</button>
+      <button class="btn primary" data-share="enviar">Enviar por aplicativo</button>
+    </div>
   </div>
 </div>
 
@@ -633,12 +645,19 @@ function initBuilder() {
     const file = new File([html], name, { type: 'text/html' });
     const mb = (file.size / 1048576).toFixed(1).replace('.', ',');
 
-    try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: state.title || 'Catálogo' });
-        return done(`O arquivo <b>${esc(name)}</b> (${mb} MB) foi enviado.`);
+    // Onde o aparelho sabe enviar arquivos (celular, Windows), a pessoa escolhe: enviar por um aplicativo ou só baixar.
+    let canSend = false;
+    try { canSend = !!(navigator.canShare && navigator.canShare({ files: [file] })); } catch (err) {}
+    if (canSend) {
+      const how = await askShare(`O arquivo <b>${esc(name)}</b> (${mb} MB) está pronto. <b>Enviar</b> abre os aplicativos deste aparelho (WhatsApp, e-mail e outros). <b>Baixar</b> guarda o arquivo aqui, para abrir no navegador ou mandar depois.`);
+      if (how === 'cancelar') return;
+      if (how === 'enviar') {
+        try {
+          await navigator.share({ files: [file], title: state.title || 'Catálogo' });
+          return done(`O arquivo <b>${esc(name)}</b> (${mb} MB) foi enviado.`);
+        } catch (err) { if (err && err.name === 'AbortError') return; }
       }
-    } catch (err) { if (err && err.name === 'AbortError') return; }
+    }
 
     const url = URL.createObjectURL(file);
     const a = document.createElement('a'); a.href = url; a.download = name;
@@ -646,6 +665,21 @@ function initBuilder() {
     setTimeout(() => URL.revokeObjectURL(url), 4000);
     done(`O arquivo <b>${esc(name)}</b> (${mb} MB) foi baixado.`);
   });
+
+  /* pergunta "enviar ou baixar": resolve com 'enviar', 'baixar' ou 'cancelar' (clicar fora cancela) */
+  function askShare(text) {
+    return new Promise(resolve => {
+      const box = $('#modalShare');
+      $('#modalShareText').innerHTML = text;
+      box.hidden = false;
+      box.onclick = e => {
+        const b = e.target.closest('[data-share]');
+        if (!b && e.target !== box) return;
+        box.hidden = true; box.onclick = null;
+        resolve(b ? b.dataset.share : 'cancelar');
+      };
+    });
+  }
 
   function done(first) {
     $('#modalText').innerHTML = first + ' Envie esse arquivo para o cliente por WhatsApp ou e-mail: ao abrir, ele verá apenas a revista, pronta para folhear. Se preferir mandar um link, publique o arquivo em um serviço de hospedagem como Netlify Drop ou GitHub Pages.';

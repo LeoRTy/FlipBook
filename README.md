@@ -12,7 +12,7 @@ O mesmo arquivo tem dois modos.
 
 **Editor.** A loja ou a gráfica abre o arquivo em branco e monta a revista: capa, páginas e contracapa. Cada imagem vira uma página, na ordem escolhida, e dá para reorganizar, trocar ou excluir. O progresso fica salvo no navegador, então dá para fechar e continuar depois.
 
-**Revista do cliente.** Ao tocar em **Compartilhar**, o editor gera um novo arquivo HTML que mostra só a revista, já com as imagens dentro. Esse arquivo pode ser enviado por WhatsApp ou e-mail, ou publicado em qualquer hospedagem para virar um link.
+**Revista do cliente.** Ao tocar em **Compartilhar**, o editor gera um novo arquivo HTML que mostra só a revista, já com as imagens dentro. Onde o aparelho sabe enviar arquivos (celular, Windows), você escolhe entre **Enviar por aplicativo** e **Baixar o arquivo**; nos demais, o arquivo é baixado direto. Esse arquivo pode ser enviado por WhatsApp ou e-mail, ou publicado em qualquer hospedagem para virar um link.
 
 ## Funcionalidades
 
