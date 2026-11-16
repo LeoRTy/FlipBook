@@ -1,0 +1,18 @@
+# Montador de Catálogo com servidor.
+# Modo local (só para você): deixe IDENTIDADE_CABECALHO vazio e publique a porta só em 127.0.0.1, como abaixo.
+# Com várias pessoas: coloque um proxy com login na frente, NÃO publique esta porta para fora, e informe em
+# IDENTIDADE_CABECALHO o cabeçalho em que o proxy manda o e-mail de quem entrou.
+services:
+  montador:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      NOME_EMPRESA: ${NOME_EMPRESA:-Sua Empresa}
+      IDENTIDADE_CABECALHO: ${IDENTIDADE_CABECALHO:-}
+      ADMINS: ${ADMINS:-}
+    volumes:
+      - dados:/dados
+volumes:
+  dados:

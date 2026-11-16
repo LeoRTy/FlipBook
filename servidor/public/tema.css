@@ -1,0 +1,80 @@
+/* Identidade visual: TODAS as cores e a fonte ficam aqui. Troque este arquivo para dar a cara da sua empresa. */
+:root {
+  --marca: #1d1b20;
+  --bg: #f6f3ee; --surface: #ffffff; --surface-2: #f4f0ea; --text: #1d1b20; --muted: #6f6a73; --faint: #9a94a0;
+  --border: #e7e2db; --accent: #c2410c; --accent-strong: #9a3412; --accent-soft: #fbf1ea; --on-accent: #ffffff;
+  --ok: #1d8f52; --warn: #b7800b; --off: #9a94a0; --danger: #c0392b; --danger-soft: #fbe9e7;
+  --shadow: 0 1px 2px rgba(29,27,32,.06), 0 4px 16px rgba(29,27,32,.07);
+  --font: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --marca: #f2efe9;
+    --bg: #16141a; --surface: #211e26; --surface-2: #29252f; --text: #f2efe9; --muted: #a7a1ab; --faint: #77717c;
+    --border: #35303b; --accent: #f97316; --accent-strong: #fb923c; --accent-soft: #2a211c; --on-accent: #1a0f08;
+    --ok: #3cc47f; --warn: #e0a930; --off: #77717c; --danger: #ef6f61; --danger-soft: #3a1f1c;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --marca: #f2efe9;
+  --bg: #16141a; --surface: #211e26; --surface-2: #29252f; --text: #f2efe9; --muted: #a7a1ab; --faint: #77717c;
+  --border: #35303b; --accent: #f97316; --accent-strong: #fb923c; --accent-soft: #2a211c; --on-accent: #1a0f08;
+  --ok: #3cc47f; --warn: #e0a930; --off: #77717c; --danger: #ef6f61; --danger-soft: #3a1f1c;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25); color-scheme: dark;
+}
+
+/* peças das telas */
+.marca-img { height: 30px; width: auto; flex: none; display: block; }
+.marca { gap: 14px; }
+.marca > div { border-left: 1px solid var(--border); padding-left: 14px; }
+.marca .t1 { color: var(--marca); }
+.top { border-top: 3px solid var(--marca); }
+a.ib { text-decoration: none; }
+.faixa-teste { background: #d27611; color: #fff; text-align: center; font-weight: 700; font-size: 12.5px; letter-spacing: 1.5px; padding: 5px 8px; }
+.adm-titulo { margin: 0; font-size: 22px; color: var(--marca); }
+.ola h1 { color: var(--marca); }
+.rot { font-size: 13px; display: block; margin-bottom: 6px; }
+.sub.mini { font-size: 12px; }
+.hist .tt { font-weight: 600; }
+.lista.esp, .linha-acoes.esp { margin-top: 10px; }
+.linha-acoes.esp { margin-bottom: 0; }
+.item.fino { padding: 8px 10px; }
+.entrada-linha { flex: 1; min-width: 200px; border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 8px 12px; }
+.caixa .aviso-caixa { margin: 14px 0; }
+.pessoa .topo-p { color: inherit; }
+/* crédito: nome e dois botões discretos */
+.cred-linha { display: flex; align-items: center; gap: 8px; }
+.cred-linha b { font-weight: 650; }
+.painel a.cred-bt { width: 22px; height: 22px; border: 1px solid var(--border); border-radius: 5px; display: inline-grid; place-items: center;
+  color: var(--muted); font-size: 11px; font-weight: 700; line-height: 1; text-decoration: none; gap: 0; }
+.painel a.cred-bt:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+.painel a.cred-bt svg { width: 13px; height: 13px; }
+.cred-linha b { font-size: 14px; color: var(--text); }
+/* rodapé sempre no pé da tela, mesmo com poucos atalhos */
+#app { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+#app > .rodape { margin-top: auto; }
+#app > main.wrap { width: 100%; }  /* dentro da coluna, o conteúdo ocupa a largura toda (até o limite de 1200px) */
+
+/* o que está marcado como escondido fica escondido de verdade (o bloco "Setores" aparecia com "Todos" escolhido) */
+[hidden] { display: none !important; }
+/* caixinhas em grade alinhada, com a contagem ao lado responsivo */
+.campo input[type=checkbox], .campo input[type=radio] { width: auto; }
+.chk input[type=checkbox] { flex: none; width: 16px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.chk label { cursor: pointer; }
+.chk.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 16px; }
+.chk.grade label { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; }
+.chk.grade label > span { min-width: 0; overflow-wrap: anywhere; }
+.chk.grade small { color: var(--faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+#f-setores-box { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+@media (max-width: 480px) { .chk.grade { grid-template-columns: 1fr 1fr; } }
+/* ajuda de cada aba (o "i") */
+.ajuda-linha { margin: -4px 0 12px; }
+.i-bt { display: inline-flex; align-items: center; gap: 7px; border: 0; background: none; padding: 4px 6px 4px 0; color: var(--muted); font-size: 13px; }
+.i-bt svg { width: 17px; height: 17px; color: var(--accent); }
+.i-bt:hover, .i-bt[aria-expanded="true"] { color: var(--accent); }
+.ajuda-caixa { background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-radius: 12px; padding: 14px 18px; margin: 0 0 16px; font-size: 14px; line-height: 1.55; animation: entra .2s ease both; }
+.ajuda-caixa p { margin: 0 0 8px; font-weight: 600; }
+.ajuda-caixa ul { margin: 0; padding-left: 18px; }
+.ajuda-caixa li { margin: 4px 0; color: var(--text); }

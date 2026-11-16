@@ -37,8 +37,13 @@ HTML5, CSS3 (transformações 3D, perspectiva, `backface-visibility`, variáveis
 index.html        editor + visualizador (arquivo único)
 catalogo-revista.html  cópia do montador para download
 exemplo.html      revista de exemplo já gerada pelo editor (marca fictícia)
+servidor/         versão com catálogos guardados no servidor (biblioteca, papéis, Node + SQLite)
 versao-antiga/    primeira versão do projeto, feita com StPageFlip
 ```
+
+## Versão com servidor
+
+Para uma equipe trabalhar nos mesmos catálogos, a pasta [`servidor`](servidor/) traz o Montador com os catálogos guardados no servidor: biblioteca (criar, editar, duplicar, excluir), salvamento automático, aparência por catálogo, papéis por pessoa (leitor, editor, administrador) e o arquivo do cliente gerado sempre da última versão salva. Node sem dependências e banco SQLite. Veja o [LEIA-ME da pasta](servidor/README.md).
 
 ## Versão anterior
 

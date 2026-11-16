@@ -1,0 +1,100 @@
+/* Montador de Catálogo: telas próprias (biblioteca e editor). As cores vêm de tema.css. */
+[hidden] { display: none !important; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ola.linha { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.ola.linha p { max-width: 620px; }
+
+/* biblioteca */
+.cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; padding: 18px 0 32px; }
+.cat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
+.cat-capa { border: 0; padding: 18px; background: var(--fundo, #4a3b33); display: grid; place-items: center; height: 230px; cursor: pointer; }
+.cat-capa img { max-width: 100%; max-height: 194px; border-radius: 3px; box-shadow: 0 10px 24px rgba(0,0,0,.4); display: block; transition: transform .2s ease; }
+.cat-capa:hover img { transform: translateY(-3px) scale(1.02); }
+.cat-vazia { color: rgba(255,255,255,.75); display: grid; gap: 8px; justify-items: center; font-size: 13px; }
+.cat-vazia svg { width: 34px; height: 34px; }
+.cat-corpo { padding: 14px 16px 6px; flex: 1; }
+.cat-corpo h3 { margin: 0 0 4px; font-size: 16.5px; color: var(--marca); overflow-wrap: anywhere; }
+.cat-corpo p { margin: 0; color: var(--muted); font-size: 13px; }
+.cat-corpo p.mini { font-size: 12px; color: var(--faint); margin-top: 3px; }
+.cat-acoes { display: flex; gap: 6px; padding: 10px 16px 16px; flex-wrap: wrap; }
+.cat-acoes .btn.mini { padding: 6px 10px; }
+.cat-acoes .btn.mini svg { width: 15px; height: 15px; }
+
+/* editor */
+.ed-barra { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
+.ed-barra .wrap { display: flex; align-items: center; gap: 10px; min-height: 56px; }
+.ed-barra .salvo { margin-left: auto; color: var(--muted); font-size: 13px; }
+.ed { padding-top: 22px; padding-bottom: 40px; }
+.bloco-ed { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px; }
+.bloco-ed h2 { margin: 0 0 12px; font-size: 17px; color: var(--marca); }
+details.bloco-ed summary { cursor: pointer; display: flex; align-items: baseline; gap: 10px; list-style: none; }
+details.bloco-ed summary::-webkit-details-marker { display: none; }
+details.bloco-ed summary::before { content: "▸"; color: var(--muted); }
+details.bloco-ed[open] summary::before { content: "▾"; }
+details.bloco-ed summary h2 { margin: 0; }
+details.bloco-ed summary span { color: var(--muted); font-size: 13px; }
+details.bloco-ed[open] summary { margin-bottom: 14px; }
+.f { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.inp, .pc input[type=text], .pc textarea { width: 100%; border: 1px solid var(--border); background: var(--surface-2); border-radius: 9px; padding: 9px 11px; font-size: 14px; font-weight: 400; color: var(--text); resize: vertical; outline: none; }
+.inp:focus, .pc input:focus, .pc textarea:focus { border-color: var(--accent); }
+.topo-esp { margin-top: 12px; }
+.cores { display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 6px; }
+.cor-linha { display: flex; align-items: center; gap: 8px; }
+input[type=color] { width: 56px; height: 38px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-2); padding: 3px; cursor: pointer; }
+.sw { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text); cursor: pointer; padding: 12px 0; border-top: 1px solid var(--border); }
+.sw input { appearance: none; -webkit-appearance: none; width: 42px; height: 24px; border-radius: 99px; background: var(--border); position: relative; cursor: pointer; transition: background .2s; flex: none; }
+.sw input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.sw input:checked { background: var(--accent); }
+.sw input:checked::after { transform: translateX(18px); }
+.sw small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.nota { color: var(--muted); font-size: 13px; line-height: 1.55; margin: 14px 0 0; max-width: 760px; }
+.sec-head { display: flex; align-items: baseline; justify-content: space-between; margin: 22px 0 12px; }
+.sec-head h2 { margin: 0; font-size: 19px; color: var(--marca); }
+.sec-head span { font-size: 13px; color: var(--muted); }
+.b-pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+.pc { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 7px; position: relative; }
+.pc.capa, .pc.contracapa { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.pc-head { display: flex; justify-content: space-between; align-items: center; min-height: 28px; }
+.pc-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.pc.capa .pc-label, .pc.contracapa .pc-label { color: var(--accent); }
+.pc-tools { display: flex; gap: 1px; }
+.pc-tools button { width: 28px; height: 28px; border: 0; background: transparent; border-radius: 7px; color: var(--muted); display: grid; place-items: center; }
+.pc-tools button:hover { background: var(--surface-2); color: var(--text); }
+.pc-tools svg { width: 15px; height: 15px; }
+.pc-img { aspect-ratio: var(--r, .72); border-radius: 8px; border: 1.5px dashed var(--border); display: grid; place-items: center; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.4; cursor: pointer; overflow: hidden; position: relative; background: var(--surface-2); }
+.pc-img:hover { border-color: var(--accent); }
+.pc-img.has { border-style: solid; }
+.pc-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pc-img .plus { font-size: 26px; display: block; color: var(--accent); margin-bottom: 4px; }
+.pc-img .chg { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.6); color: #fff; font-size: 11px; padding: 4px 10px; border-radius: 99px; opacity: 0; transition: opacity .2s; white-space: nowrap; }
+.pc-img:hover .chg { opacity: 1; }
+@media (hover: none) { .pc-img .chg { opacity: 1; } }
+.pc.loading .pc-img::after { content: "Enviando…"; position: absolute; inset: 0; display: grid; place-items: center; background: rgba(255,255,255,.8); color: #333; font-weight: 600; }
+.pc input[type=text], .pc textarea { font-size: 13px; padding: 8px 9px; }
+.link { border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer; text-decoration: underline; align-self: flex-start; padding: 0; }
+.b-add { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.btn.add { border: 1.5px dashed var(--accent); color: var(--accent); background: transparent; cursor: pointer; }
+
+/* janelas */
+.janela.centro { text-align: center; max-width: 460px; }
+.janela.centro .fim { justify-content: center; }
+.modal-txt { color: var(--muted); font-size: 14px; line-height: 1.55; margin: 0 0 18px; }
+.modal-ic { width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; margin: 0 auto 12px; }
+.modal-ic svg { width: 26px; height: 26px; }
+#revista:not(.v) { display: none; }
+
+@media (max-width: 640px) {
+  .b-pages { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ed-barra .btn { padding: 8px 10px; font-size: 13px; }
+  .ed-barra .salvo { display: none; }
+  .cat-capa { height: 200px; }
+  .cat-capa img { max-height: 164px; }
+}
+/* a chave liga-desliga fica à esquerda, com o texto ao lado  */
+.sw { justify-content: flex-start; border-bottom: 0; }
+/* administração */
+.convite { margin-bottom: 16px; }
+.convite select.btn { padding: 8px 10px; }
+.sub-titulo { font-size: 15px; color: var(--marca); margin: 24px 0 10px; }
+.painel-adm .item select.btn.mini { max-width: 230px; }
+@media (max-width: 640px) { .painel-adm .item select.btn.mini { max-width: none; flex: 1 1 100%; } }
