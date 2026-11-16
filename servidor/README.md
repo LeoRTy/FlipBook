@@ -14,7 +14,10 @@ catálogo de outro computador.
 - **Editor:** capa, páginas e contracapa. Cada imagem vira uma página; dá para enviar várias de uma vez, trocar,
   remover e mudar a ordem.
 - **Aparência por catálogo:** cor do fundo, do destaque e do papel, logo, numeração, textos dos botões de WhatsApp.
-- **Salvamento automático,** com aviso quando outra pessoa salvou o mesmo catálogo enquanto você editava.
+- **Salvar só no botão:** nada é gravado sozinho. "Novo catálogo" abre o editor em branco e o catálogo só passa a existir
+  no Salvar (Ctrl+S também salva). **Redefinir** desfaz o que não foi salvo, com confirmação. Ao sair com alterações
+  por salvar, o Montador pergunta antes. Se outra pessoa salvou o mesmo catálogo enquanto você editava, ele avisa.
+- **Ajuda na tela:** o "i" de cada tela abre um pop-up com o botão Entendi.
 - **Compartilhar** gera no servidor um arquivo HTML único, com as imagens embutidas. O cliente abre no celular ou no
   computador e folheia, sem login. O arquivo continua funcionando mesmo que o catálogo seja excluído depois.
 - **Papéis por pessoa:** leitor (vê, visualiza e compartilha), editor (cria, edita, duplica e exclui) e

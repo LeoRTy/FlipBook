@@ -38,7 +38,7 @@ var Revista = (function () {
       return s;
     }
 
-    function face(p, side) {
+    function face(p, side, esq) {
       var inner = "", cls = "";
       var contato = waNumber() ? botaoWa(ap.mensagemContato || "Olá! Vi o catálogo e gostaria de mais informações.", ap.botaoContato || "Fale com a gente") : "";
       if (p.kind === "cover") {
@@ -59,7 +59,7 @@ var Revista = (function () {
         }
         inner = (p.img ? '<img src="' + p.img + '" alt="">' : "") + cap + (ap.numeros === false ? "" : '<div class="pn">' + String(p.num).padStart(2, "0") + "</div>");
       } else if (p.kind === "paper") cls = "paper";
-      return '<div class="face ' + side + " " + cls + '">' + inner + '<div class="spine"></div><div class="shade"></div></div>';
+      return '<div class="face ' + side + " " + cls + (esq && p.kind === "page" ? " esq" : "") + '">' + inner + '<div class="spine"></div><div class="shade"></div></div>';
     }
 
     function build() {
@@ -76,7 +76,8 @@ var Revista = (function () {
         var f = single ? S[i] : S[2 * i], b = single ? { kind: "paper" } : S[2 * i + 1];
         var leaf = document.createElement("div");
         leaf.className = "leaf";
-        leaf.innerHTML = face(f, "front") + face(b, "back");
+        // em uma página por vez, as de posição ímpar são as páginas da esquerda da revista
+        leaf.innerHTML = face(f, "front", single && i % 2 === 1) + face(b, "back");
         els.book.appendChild(leaf);
         leaves.push(leaf);
       }
