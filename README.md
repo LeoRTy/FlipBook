@@ -18,7 +18,7 @@ O mesmo arquivo tem dois modos.
 
 * Folhear com animação 3D, sombra de lombada, curvatura de página e espessura do miolo
 * Navegação por setas na tela, setas do teclado, toque na página ou deslizando o dedo
-* Visualização em 2 páginas lado a lado ou 1 página por vez (a escolha fica salva)
+* Abre em 2 páginas lado a lado no computador e em 1 página por vez no celular; um botão troca o modo enquanto a revista está aberta
 * Inclinação 3D que acompanha o mouse no computador
 * A revista adota o formato da capa, então artes prontas da gráfica (A4 em pé, quadrado etc.) não são cortadas
 * Modo "página pronta" (só a arte) ou modo com nome, preço e descrição do produto sobre a imagem

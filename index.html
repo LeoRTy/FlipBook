@@ -235,9 +235,9 @@ const Viewer = (() => {
   const DUR = 900;
   let data, root, els = {}, S = [], leaves = [], flipped = 0, cur = 0, mode = '', zc = 0, active = false, opts = {}, hintT;
 
-  // No celular a revista abre em uma página por vez (em duas, o texto fica pequeno). A escolha de quem lê vale sempre.
+  // Abre sempre em duas páginas no computador e em uma no celular (em duas, o texto fica pequeno na tela estreita).
+  // O botão troca o modo só enquanto a revista está aberta: a escolha não fica guardada.
   let forced = matchMedia('(max-width: 640px)').matches ? 'single' : 'spread';
-  try { const v = localStorage.getItem('revista-layout-v2'); if (v === 'single' || v === 'spread') forced = v; } catch (e) {}
   const isSingle = () => forced === 'single';
   const pageRatio = () => {
     const r = (data.cover && data.cover.r) || ((data.pages.find(p => p.r) || {}).r) || .72;
@@ -409,7 +409,6 @@ const Viewer = (() => {
       else if (a === 'close') unmount();
       else if (a === 'layout') {
         forced = mode === 'single' ? 'spread' : 'single';
-        try { localStorage.setItem('revista-layout-v2', forced); } catch (err) {}
         build();
       }
       else if (a === 'fs') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}); }

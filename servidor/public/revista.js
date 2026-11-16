@@ -16,9 +16,9 @@ var Revista = (function () {
     var ap = data.aparencia || {};
     var els = {}, S = [], leaves = [], flipped = 0, cur = 0, mode = "", zc = 0, active = true, hintT, rt;
     var fim = new AbortController();
-    var forced = "spread";
-    try { var v = localStorage.getItem("revista-layout-v2"); if (v === "single" || v === "spread") forced = v; } catch (e) { /* sem armazenamento */ }
-    if (!v && matchMedia("(max-width: 640px)").matches) forced = "single";
+    // Abre sempre em duas páginas no computador e em uma no celular. O botão troca o modo só enquanto a revista
+    // está aberta: a escolha não fica guardada.
+    var forced = matchMedia("(max-width: 640px)").matches ? "single" : "spread";
 
     var isSingle = function () { return forced === "single"; };
     var pageRatio = function () {
@@ -198,7 +198,6 @@ var Revista = (function () {
       else if (a === "close") desmontar();
       else if (a === "layout") {
         forced = mode === "single" ? "spread" : "single";
-        try { localStorage.setItem("revista-layout-v2", forced); } catch (err) { /* sem armazenamento */ }
         build();
       } else if (a === "fs") { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(function () {}); }
     }, sinal);
