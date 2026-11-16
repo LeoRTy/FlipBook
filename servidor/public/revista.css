@@ -69,7 +69,21 @@
 @keyframes bump{20%{transform:translateX(-8px)}50%{transform:translateX(6px)}80%{transform:translateX(-3px)}}
 @keyframes shade{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
 .v-logo{height:26px;width:auto;display:block;opacity:.95;justify-self:start}
-.v-credit{display:block;text-align:center;font-size:10px;letter-spacing:.04em;text-decoration:none;color:inherit;opacity:.28;transition:opacity .2s;padding:0 0 max(8px,env(safe-area-inset-bottom));margin-top:-8px}
-.v-credit:hover{opacity:.6}
+/* crédito: o nome do aplicativo no rodapé abre um cartão com o autor e dois botões discretos */
+.v-credit{display:block;margin:0 auto;border:0;background:none;font:inherit;text-align:center;font-size:10px;letter-spacing:.04em;color:inherit;opacity:.28;transition:opacity .2s;padding:2px 6px;cursor:pointer}
+.v-credit:hover,.v-credit[aria-expanded="true"]{opacity:.7;text-decoration:underline;text-underline-offset:3px}
+.cred-painel{position:fixed;left:0;right:0;bottom:44px;margin:0 auto;width:min(360px,calc(100vw - 32px));z-index:80;text-align:left;padding:16px 18px;border-radius:14px;
+  background:#fbf9f4;color:#1d1b20;border:1px solid #e2dcd3;box-shadow:0 12px 36px rgba(0,0,0,.28);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;animation:cred-entra .2s ease both}
+.cred-painel h4{margin:0 0 10px;font-size:13px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;color:#6f6a73}
+.cred-painel .cred-linha{display:flex;align-items:center;gap:8px}
+.cred-painel .cred-linha b{font-size:14px;font-weight:650}
+.cred-painel a{width:22px;height:22px;border:1px solid #e2dcd3;border-radius:5px;display:inline-grid;place-items:center;color:#6f6a73;font-size:11px;font-weight:700;line-height:1;text-decoration:none}
+.cred-painel a:hover{color:#c2410c;border-color:#c2410c}
+.cred-painel a svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cred-painel p{margin:6px 0 0;font-size:13.5px;line-height:1.45;color:#6f6a73}
+.cred-painel .cred-x{position:absolute;top:8px;right:8px;width:28px;height:28px;border:0;background:none;color:#6f6a73;border-radius:8px;font-size:20px;line-height:1;cursor:pointer}
+.cred-painel .cred-x:hover{color:#1d1b20}
+@keyframes cred-entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.v-credit{padding:0 6px max(8px,env(safe-area-inset-bottom));margin-top:-8px}
 .v-top>:first-child{justify-self:start}
 .v button{font:inherit}

@@ -180,7 +180,7 @@ var Revista = (function () {
         '<div class="v-count"><span></span><div class="v-track"><i></i></div></div>' +
         '<button class="v-nav" data-v="next" aria-label="Próxima página">' + ICON_R + "</button>" +
       "</div>" +
-      '<a class="v-credit" href="https://br.linkedin.com/in/leonardo-teixeira-3244a6143" target="_blank" rel="noopener">Desenvolvido por Leonardo Teixeira</a>';
+      '<button type="button" class="v-credit" data-credito aria-haspopup="dialog" aria-expanded="false">Montador de Catálogo</button>';
     els = {
       stage: $(".v-stage", root), clip: $(".v-clip", root), tilt: $(".v-tilt", root), book: $(".v-book", root),
       shadow: $(".v-shadow", root), el: $(".edge.l", root), er: $(".edge.r", root),
@@ -245,4 +245,40 @@ var Revista = (function () {
   }
 
   return { montar: montar };
+})();
+
+/* crédito: o nome do aplicativo no rodapé abre um cartão com o autor, dois botões discretos (LinkedIn e portfólio) e a
+   descrição. Fecha no X, no Esc, clicando fora ou clicando de novo no nome. */
+(function () {
+  var C = { app: "Montador de Catálogo", nome: "Leonardo Teixeira", descricao: "Desenvolvedor e criador do Montador de Catálogo.",
+    linkedin: "https://br.linkedin.com/in/leonardo-teixeira-3244a6143", portfolio: "https://leorty.github.io/Portfolio-dev" };
+  var GH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-4.5 1.4-4.5-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.800-.300 5.500-1.400 5.500-6a4.600 4.600 0 0 0-1.300-3.200 4.200 4.200 0 0 0-.1-3.200s-1.100-.300-3.500 1.300a12 12 0 0 0-6.200 0C6.500 2.800 5.400 3.100 5.400 3.100a4.200 4.200 0 0 0-.1 3.200A4.600 4.600 0 0 0 4 9.500c0 4.600 2.700 5.700 5.500 6-.6.6-.6 1.200-.5 2V21"/></svg>';
+  var painel = null, origem = null;
+  function fechar(devolveFoco) {
+    if (!painel) return;
+    painel.remove(); painel = null;
+    if (origem) { origem.setAttribute("aria-expanded", "false"); if (devolveFoco && origem.isConnected) origem.focus(); }
+    origem = null;
+  }
+  document.addEventListener("click", function (e) {
+    var bt = e.target.closest ? e.target.closest("[data-credito]") : null;
+    if (painel) {
+      if (painel.contains(e.target) && !e.target.closest(".cred-x")) return;
+      var mesmo = bt === origem;
+      fechar(Boolean(e.target.closest(".cred-x")));
+      if (mesmo) return;
+    }
+    if (!bt) return;
+    origem = bt; bt.setAttribute("aria-expanded", "true");
+    painel = document.createElement("div");
+    painel.className = "cred-painel"; painel.setAttribute("role", "dialog"); painel.setAttribute("aria-label", "Criação e desenvolvimento");
+    painel.innerHTML = '<button type="button" class="cred-x" aria-label="Fechar">&times;</button><h4>' + C.app + "</h4>" +
+      '<div class="cred-linha"><b>' + C.nome + "</b>" +
+      '<a href="' + C.linkedin + '" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn de ' + C.nome + '" title="LinkedIn">in</a>' +
+      '<a href="' + C.portfolio + '" target="_blank" rel="noopener noreferrer" aria-label="Portfólio de ' + C.nome + '" title="Portfólio">' + GH + "</a></div>" +
+      "<p>" + C.descricao + "</p>";
+    // dentro do visualizador (inclusive em tela cheia) o cartão precisa nascer dentro dele para aparecer
+    (bt.closest("#revista") || document.body).appendChild(painel);
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && painel) { e.stopPropagation(); fechar(true); } }, true);
 })();

@@ -152,8 +152,21 @@ input[type=color]{width:64px;height:42px;border:1px solid var(--line);border-rad
 .v-count{min-width:120px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums;opacity:.9}
 .v-track{width:120px;height:3px;background:rgba(255,255,255,.16);border-radius:3px;margin:7px auto 0;overflow:hidden}
 .v-track i{display:block;height:100%;width:0;background:#fff;border-radius:3px;transition:width .6s ease}
-.credit{display:block;text-align:center;font-size:10px;letter-spacing:.04em;text-decoration:none;color:inherit;opacity:.28;transition:opacity .2s;padding:2px 0}
-.credit:hover{opacity:.6}
+/* crédito: o nome do aplicativo no rodapé abre um cartão com o autor e dois botões discretos */
+.credit{display:block;margin:0 auto;border:0;background:none;font:inherit;text-align:center;font-size:10px;letter-spacing:.04em;color:inherit;opacity:.28;transition:opacity .2s;padding:2px 6px;cursor:pointer}
+.credit:hover,.credit[aria-expanded="true"]{opacity:.7;text-decoration:underline;text-underline-offset:3px}
+.cred-painel{position:fixed;left:0;right:0;bottom:44px;margin:0 auto;width:min(360px,calc(100vw - 32px));z-index:80;text-align:left;padding:16px 18px;border-radius:14px;
+  background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:0 12px 36px rgba(0,0,0,.28);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;animation:cred-entra .2s ease both}
+.cred-painel h4{margin:0 0 10px;font-size:13px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;color:var(--muted)}
+.cred-painel .cred-linha{display:flex;align-items:center;gap:8px}
+.cred-painel .cred-linha b{font-size:14px;font-weight:650}
+.cred-painel a{width:22px;height:22px;border:1px solid var(--line);border-radius:5px;display:inline-grid;place-items:center;color:var(--muted);font-size:11px;font-weight:700;line-height:1;text-decoration:none}
+.cred-painel a:hover{color:var(--accent);border-color:var(--accent)}
+.cred-painel a svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cred-painel p{margin:6px 0 0;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.cred-painel .cred-x{position:absolute;top:8px;right:8px;width:28px;height:28px;border:0;background:none;color:var(--muted);border-radius:8px;font-size:20px;line-height:1;cursor:pointer}
+.cred-painel .cred-x:hover{color:var(--ink)}
+@keyframes cred-entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .v .credit{padding:0 0 max(8px,env(safe-area-inset-bottom));margin-top:-8px}
 .b-main .credit{margin-top:40px;color:var(--muted);opacity:.55}
 @keyframes vIn{from{opacity:0;transform:translateY(30px) scale(.92)}to{opacity:1;transform:none}}
@@ -192,7 +205,7 @@ input[type=color]{width:64px;height:42px;border:1px solid var(--line);border-rad
       <button class="btn ghost" id="addEmpty">＋ Página vazia</button>
     </div>
     <p class="b-tip">Dica: selecione várias imagens de uma vez e cada uma vira uma página, na ordem em que foram escolhidas. A revista adota o formato da capa, então use todas as páginas no mesmo tamanho (por exemplo A4 em pé) para nada ficar cortado. Use as setas de cada página para mudar a ordem. Seu progresso fica salvo neste navegador, então dá para fechar e continuar depois.</p>
-    <a class="credit" href="https://www.linkedin.com/in/leonardo-teixeira-3244a6143" target="_blank" rel="noopener">Desenvolvido por Leonardo Teixeira</a>
+    <button type="button" class="credit" data-credito aria-haspopup="dialog" aria-expanded="false">Montador de Catálogo</button>
   </main>
 </div>
 
@@ -380,7 +393,7 @@ const Viewer = (() => {
         <div class="v-count"><span></span><div class="v-track"><i></i></div></div>
         <button class="v-nav" data-v="next" aria-label="Próxima página">${ICON_R}</button>
       </div>
-      <a class="credit" href="https://www.linkedin.com/in/leonardo-teixeira-3244a6143" target="_blank" rel="noopener">Desenvolvido por Leonardo Teixeira</a>`;
+      <button type="button" class="credit" data-credito aria-haspopup="dialog" aria-expanded="false">Montador de Catálogo</button>`;
     els = {
       stage: $('.v-stage', root), clip: $('.v-clip', root), tilt: $('.v-tilt', root), book: $('.v-book', root),
       shadow: $('.v-shadow', root), el: $('.edge.l', root), er: $('.edge.r', root),
@@ -646,6 +659,41 @@ function initBuilder() {
     fillSettings(); renderPages();
   })();
 }
+/* crédito: o nome do aplicativo no rodapé abre um cartão com o autor, dois botões discretos (LinkedIn e portfólio) e a
+   descrição. Fecha no X, no Esc, clicando fora ou clicando de novo no nome. */
+(function () {
+  var C = { app: "Montador de Catálogo", nome: "Leonardo Teixeira", descricao: "Desenvolvedor e criador do Montador de Catálogo.",
+    linkedin: "https://br.linkedin.com/in/leonardo-teixeira-3244a6143", portfolio: "https://leorty.github.io/Portfolio-dev" };
+  var GH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-4.5 1.4-4.5-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.800-.300 5.500-1.400 5.500-6a4.600 4.600 0 0 0-1.300-3.200 4.200 4.200 0 0 0-.1-3.200s-1.100-.300-3.500 1.300a12 12 0 0 0-6.200 0C6.500 2.800 5.400 3.100 5.400 3.100a4.200 4.200 0 0 0-.1 3.200A4.600 4.600 0 0 0 4 9.500c0 4.600 2.700 5.700 5.500 6-.6.6-.6 1.200-.5 2V21"/></svg>';
+  var painel = null, origem = null;
+  function fechar(devolveFoco) {
+    if (!painel) return;
+    painel.remove(); painel = null;
+    if (origem) { origem.setAttribute("aria-expanded", "false"); if (devolveFoco && origem.isConnected) origem.focus(); }
+    origem = null;
+  }
+  document.addEventListener("click", function (e) {
+    var bt = e.target.closest ? e.target.closest("[data-credito]") : null;
+    if (painel) {
+      if (painel.contains(e.target) && !e.target.closest(".cred-x")) return;
+      var mesmo = bt === origem;
+      fechar(Boolean(e.target.closest(".cred-x")));
+      if (mesmo) return;
+    }
+    if (!bt) return;
+    origem = bt; bt.setAttribute("aria-expanded", "true");
+    painel = document.createElement("div");
+    painel.className = "cred-painel"; painel.setAttribute("role", "dialog"); painel.setAttribute("aria-label", "Criação e desenvolvimento");
+    painel.innerHTML = '<button type="button" class="cred-x" aria-label="Fechar">&times;</button><h4>' + C.app + "</h4>" +
+      '<div class="cred-linha"><b>' + C.nome + "</b>" +
+      '<a href="' + C.linkedin + '" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn de ' + C.nome + '" title="LinkedIn">in</a>' +
+      '<a href="' + C.portfolio + '" target="_blank" rel="noopener noreferrer" aria-label="Portfólio de ' + C.nome + '" title="Portfólio">' + GH + "</a></div>" +
+      "<p>" + C.descricao + "</p>";
+    // dentro do visualizador (inclusive em tela cheia) o cartão precisa nascer dentro dele para aparecer
+    (bt.closest(".v") || document.body).appendChild(painel);
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && painel) { e.stopPropagation(); fechar(true); } }, true);
+})();
 </script>
 </body>
 </html>
