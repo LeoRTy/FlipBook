@@ -115,6 +115,10 @@ input[type=color]{width:64px;height:42px;border:1px solid var(--line);border-rad
 .face.back .spine{background:linear-gradient(270deg,rgba(0,0,0,.32) 0%,rgba(0,0,0,.1) 3.5%,rgba(0,0,0,0) 9%,rgba(0,0,0,0) 96%,rgba(0,0,0,.08) 100%)}
 .shade{position:absolute;inset:0;pointer-events:none;z-index:4;opacity:0;background:linear-gradient(90deg,rgba(0,0,0,.08),rgba(0,0,0,.5))}
 .face.back .shade{background:linear-gradient(270deg,rgba(0,0,0,.08),rgba(0,0,0,.5))}
+/* uma página por vez: a página da esquerda tem a lombada e o canto reto do lado direito, e o número do lado esquerdo */
+.face.front.esq{border-radius:4px 0 0 4px}
+.face.front.esq .spine{background:linear-gradient(270deg,rgba(0,0,0,.32) 0%,rgba(0,0,0,.1) 3.5%,rgba(0,0,0,0) 9%,rgba(0,0,0,0) 96%,rgba(0,0,0,.08) 100%)}
+.face.front.esq .pn{right:auto;left:1.2em}
 .leaf.moving .shade{animation:shade .9s cubic-bezier(.645,.045,.355,1)}
 .leaf.moving .face{box-shadow:0 0 40px rgba(0,0,0,.35)}
 .face.is-cover::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(115deg,transparent 28%,rgba(255,255,255,.16) 44%,transparent 60%)}
@@ -218,7 +222,8 @@ const Viewer = (() => {
   const DUR = 900;
   let data, root, els = {}, S = [], leaves = [], flipped = 0, cur = 0, mode = '', zc = 0, active = false, opts = {}, hintT;
 
-  let forced = 'spread';
+  // No celular a revista abre em uma página por vez (em duas, o texto fica pequeno). A escolha de quem lê vale sempre.
+  let forced = matchMedia('(max-width: 640px)').matches ? 'single' : 'spread';
   try { const v = localStorage.getItem('revista-layout-v2'); if (v === 'single' || v === 'spread') forced = v; } catch (e) {}
   const isSingle = () => forced === 'single';
   const pageRatio = () => {
@@ -239,7 +244,7 @@ const Viewer = (() => {
     return s;
   }
 
-  function face(p, side) {
+  function face(p, side, esq) {
     let inner = '', cls = '';
     if (p.kind === 'cover') {
       cls = 'is-cover';
@@ -259,7 +264,7 @@ const Viewer = (() => {
       }
       inner = (p.img ? `<img src="${p.img}" alt="">` : '') + cap + `<div class="pn">${String(p.num).padStart(2, '0')}</div>`;
     } else if (p.kind === 'paper') cls = 'paper';
-    return `<div class="face ${side} ${cls}">${inner}<div class="spine"></div><div class="shade"></div></div>`;
+    return `<div class="face ${side} ${cls}${esq && p.kind === 'page' ? ' esq' : ''}">${inner}<div class="spine"></div><div class="shade"></div></div>`;
   }
 
   function build() {
@@ -277,7 +282,8 @@ const Viewer = (() => {
       const b = single ? { kind: 'paper' } : S[2 * i + 1];
       const leaf = document.createElement('div');
       leaf.className = 'leaf';
-      leaf.innerHTML = face(f, 'front') + face(b, 'back');
+      // em uma página por vez, as de posição ímpar são as páginas da esquerda da revista
+      leaf.innerHTML = face(f, 'front', single && i % 2 === 1) + face(b, 'back');
       els.book.appendChild(leaf);
       leaves.push(leaf);
     }
