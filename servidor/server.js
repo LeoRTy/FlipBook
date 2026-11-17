@@ -20,6 +20,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { DatabaseSync } = require("node:sqlite");
+const LerCatalogo = require("./public/ler-catalogo.js");     // leitura do .html do "Carregar catálogo" (a tela usa o mesmo)
 
 /* ─────────────────────────────── configuração ─────────────────────────────── */
 
@@ -40,6 +41,9 @@ const PASTA_IMAGENS = path.join(PASTA_DADOS, "imagens");
 const PASTA_PUBLICA = path.join(__dirname, "public");
 const MAX_IMAGEM = 4 * 1024 * 1024;      // por imagem (a tela já reduz antes de enviar)
 const MAX_PAGINAS = 300;
+// Carregar catálogo: tamanho máximo do arquivo .html (cerca de 300 KB por página: 60 MB dá umas 200 páginas).
+// CATALOGO_MAX_CARREGAR_MB só existe para o teste automático usar um limite pequeno.
+const MAX_CARREGAR = Math.round((Number(process.env.CATALOGO_MAX_CARREGAR_MB) || 60) * 1024 * 1024);
 
 if (!IDENTIDADE_CABECALHO) console.warn("[INICIO] MODO LOCAL: sem identificação. Quem alcançar este endereço é administrador.");
 else if (!ADMINS.length) console.warn("[INICIO] ADMINS vazio: ninguém consegue abrir a Administração.");
@@ -202,6 +206,94 @@ function nomeArquivo(titulo) {
     return (String(titulo || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "catalogo") + ".html";
 }
 
+/* ─────────────── Carregar catálogo (1.3.0): um .html de catálogo vira mais um catálogo da biblioteca ───────────────
+   Exemplo: alguém de fora monta o catálogo na página do FlipBook, baixa e manda o .html; quem usa o Montador com
+   servidor carrega o arquivo e passa a ter essa versão para editar ou reenviar. Vale também para o arquivo do
+   Compartilhar desta versão com servidor.
+   O arquivo vem de fora e pode ter sido mexido, então: só os DADOS do catálogo são lidos (public/ler-catalogo.js), o
+   HTML nunca é executado nem servido nem guardado; imagem só JPEG embutido no arquivo (data URL), conferida pelo
+   cabeçalho, até MAX_IMAGEM cada; textos passam pelo limparCatalogo (texto puro, com tamanho máximo) e sempre saem
+   escapados; link externo nunca vira imagem nem script. */
+
+const mb = (n) => (n / 1048576).toFixed(1).replace(".", ",");
+
+/** Largura e altura de um JPEG, lidas do cabeçalho (marcador SOF). null se não for um JPEG legível. */
+function medidasJpeg(b) {
+    if (b.length < 100 || b[0] !== 0xff || b[1] !== 0xd8 || b[2] !== 0xff) return null;
+    let i = 2;
+    while (i + 9 < b.length) {
+        if (b[i] !== 0xff) return null;
+        const m = b[i + 1];
+        if (m === 0xff) { i++; continue; }                                // byte de preenchimento
+        if (m === 0x01 || (m >= 0xd0 && m <= 0xd8)) { i += 2; continue; }  // marcadores sem tamanho
+        if (m === 0xd9 || m === 0xda) return null;                         // acabou antes de dizer as medidas
+        const tam = b.readUInt16BE(i + 2);
+        if (tam < 2) return null;
+        if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+            const h = b.readUInt16BE(i + 5), w = b.readUInt16BE(i + 7);
+            return h && w ? { w, h } : null;
+        }
+        i += 2 + tam;
+    }
+    return null;
+}
+
+/** Uma imagem do arquivo carregado. Devolve null (sem imagem), { bytes, r } (aceita) ou { motivo } (ignorada). */
+function imagemCarregada(src) {
+    if (!src) return null;
+    const m = /^data:image\/(?:jpeg|jpg|pjpeg);base64,/i.exec(src);
+    if (!m) return { motivo: /^\s*data:/i.test(src) ? "imagem em formato não aceito (só JPEG)" : "imagem fora do arquivo (link ou pasta separada)" };
+    const b64 = src.slice(m[0].length).replace(/\s+/g, "");
+    if (Math.floor(b64.length * 3 / 4) > MAX_IMAGEM) return { motivo: `imagem grande demais (${mb(b64.length * 3 / 4)} MB; o limite é ${mb(MAX_IMAGEM)} MB)` };
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(b64)) return { motivo: "imagem danificada" };
+    const bytes = Buffer.from(b64, "base64");
+    const med = medidasJpeg(bytes);
+    if (!med) return { motivo: "imagem danificada" };
+    return { bytes, r: +(med.w / med.h).toFixed(4) };
+}
+
+/** Lê o .html, confere e grava como catálogo novo. As imagens que não puderem ser lidas deixam a página em branco e
+ *  voltam em "avisos" (a tela mostra quais foram). */
+function carregarCatalogo(texto, titulo, nomeArq, eu) {
+    let lido;
+    try { lido = LerCatalogo.extrair(texto); } catch (e) { throw new Erro(e.message); }
+    if (lido.paginas.length > MAX_PAGINAS) throw new Erro(`O catálogo deste arquivo tem ${lido.paginas.length} páginas e o limite do Montador é ${MAX_PAGINAS}.`);
+    const novas = [], avisos = [];
+    const converter = (f, onde) => {
+        const im = imagemCarregada(f.img);
+        if (!im) return { img: "", r: 0 };
+        if (im.motivo) { avisos.push(`${onde}: ${im.motivo}`); return { img: "", r: 0 }; }
+        const id = novoId();
+        novas.push({ id, bytes: im.bytes, r: im.r });
+        return { img: id, r: im.r };
+    };
+    const capa = converter(lido.capa, "Capa");
+    const paginas = lido.paginas.map((p, i) => ({ ...converter(p, "Página " + (i + 1)), id: novoId(), nome: p.nome, preco: p.preco, descricao: p.descricao }));
+    const contracapa = converter(lido.contracapa, "Contracapa");
+    if (!novas.length) {
+        throw new Erro(avisos.length ? `Nenhuma imagem do arquivo pôde ser lida (${avisos.slice(0, 3).join("; ")}${avisos.length > 3 ? "…" : ""}).`
+            : "O catálogo deste arquivo não tem nenhuma imagem.");
+    }
+    const dados = limparCatalogo({ titulo, aparencia: lido.aparencia, capa, contracapa, paginas });
+    const id = novoId(), quando = agora(), gravadas = [];
+    try {
+        for (const im of novas) { fs.writeFileSync(arquivoImagem(im.id), im.bytes); gravadas.push(im.id); }
+        db.exec("BEGIN");
+        try {
+            for (const im of novas) rodar("INSERT INTO imagens (id, catalogo, proporcao, bytes, criado_por, criado_em) VALUES (?, ?, ?, ?, ?, ?)", im.id, id, im.r, im.bytes.length, eu.email, quando);
+            rodar("INSERT INTO catalogos (id, titulo, dados, criado_por, criado_em, atualizado_por, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                id, dados.titulo, JSON.stringify(dados), eu.email, quando, eu.email, quando);
+            db.exec("COMMIT");
+        } catch (e) { db.exec("ROLLBACK"); throw e; }
+    } catch (e) {
+        for (const g of gravadas) { try { fs.unlinkSync(arquivoImagem(g)); } catch { /* já não existia */ } }
+        throw e;
+    }
+    registrar(eu.email, dados.titulo, `catálogo carregado do arquivo "${nomeArq || "sem nome"}" (${LerCatalogo.NOME_FORMATO[lido.formato]}): ` +
+        `${dados.paginas.length} páginas, ${novas.length} imagens${avisos.length ? `, ${avisos.length} ignoradas` : ""}`);
+    return { id, titulo: dados.titulo, formato: lido.formato, paginas: dados.paginas.length, imagens: novas.length, avisos };
+}
+
 /* ─────────────────────────────────── servidor ─────────────────────────────────── */
 
 const TIPOS = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
@@ -216,11 +308,18 @@ function responder(res, status, corpo, extra = {}) {
         "Cache-Control": "no-store", ...SEGURANCA, ...extra });
     res.end(json ? JSON.stringify(corpo) : corpo);
 }
-function lerBruto(req, max) {
+/** Lê o corpo do pedido até `max` bytes. Passou do limite: descarta o resto (sem guardar) e só no fim recusa com 413,
+ *  para a tela receber a mensagem (cortar a conexão no meio fazia o navegador mostrar só "falha de rede"). */
+function lerBruto(req, max, mensagem = "Arquivo grande demais.") {
     return new Promise((resolve, reject) => {
-        let tam = 0; const partes = [];
-        req.on("data", (d) => { tam += d.length; if (tam > max) { reject(new Erro("Arquivo grande demais.", 413)); req.destroy(); } else partes.push(d); });
-        req.on("end", () => resolve(Buffer.concat(partes)));
+        let tam = 0, passou = Number(req.headers["content-length"]) > max;
+        const partes = [];
+        req.on("data", (d) => {
+            tam += d.length;
+            if (!passou && tam > max) { passou = true; partes.length = 0; }
+            if (!passou) partes.push(d);
+        });
+        req.on("end", () => passou ? reject(new Erro(mensagem, 413)) : resolve(Buffer.concat(partes)));
         req.on("error", reject);
     });
 }
@@ -300,7 +399,18 @@ async function atender(req, res) {
 
     switch (rota) {
         case "GET eu":
-            return responder(res, 200, { ...eu, ambiente: AMBIENTE, versao: VERSAO, empresa: NOME_EMPRESA, temLogo: fs.existsSync(path.join(PASTA_PUBLICA, "logo.png")), padrao: PADRAO, maxPaginas: MAX_PAGINAS });
+            return responder(res, 200, { ...eu, ambiente: AMBIENTE, versao: VERSAO, empresa: NOME_EMPRESA, temLogo: fs.existsSync(path.join(PASTA_PUBLICA, "logo.png")), padrao: PADRAO, maxPaginas: MAX_PAGINAS, maxCarregar: MAX_CARREGAR });
+
+        case "POST carregar": {
+            // Carregar catálogo: o corpo é o .html escolhido; o nome do catálogo vem em ?titulo= (obrigatório)
+            exigirEditor();
+            const titulo = texto(url.searchParams.get("titulo"), 80);
+            if (!titulo) throw new Erro("Dê um nome ao catálogo.");
+            if (!/^text\/html\b/i.test(req.headers["content-type"] || "")) throw new Erro("Envie o arquivo .html do catálogo.", 415);
+            const nomeArq = texto(url.searchParams.get("arquivo"), 120).replace(/[\u0000-\u001f\\/]/g, "");
+            const bytes = await lerBruto(req, MAX_CARREGAR, `O arquivo passa do limite de ${mb(MAX_CARREGAR)} MB para carregar.`);
+            return responder(res, 200, carregarCatalogo(bytes.toString("utf8"), titulo, nomeArq, eu));
+        }
 
         case "GET catalogos":
             return responder(res, 200, todos("SELECT * FROM catalogos ORDER BY atualizado_em DESC").map(resumo));

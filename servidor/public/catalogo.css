@@ -3,6 +3,14 @@
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .ola.linha { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .ola.linha p { max-width: 620px; }
+.ola-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Carregar catálogo (1.3.0): a janela que mostra o arquivo escolhido e pede o nome */
+.cc-arq { display: flex; gap: 12px; align-items: center; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; background: var(--surface-2); margin: 0 0 14px; }
+.cc-arq > svg.i { width: 28px; height: 28px; color: var(--accent); }
+.cc-arq b { display: block; font-size: 14.5px; overflow-wrap: anywhere; }
+.cc-arq span { display: block; color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 2px; }
+.cc-nota { margin: 0 0 6px; }
 
 /* biblioteca */
 .cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; padding: 18px 0 32px; }
@@ -95,6 +103,8 @@ input[type=color] { width: 56px; height: 38px; border: 1px solid var(--border); 
   .ed-barra .voltar { margin-right: auto; }
   .ed-barra .btn .tx { display: none; }
   .janela .fim .btn { flex: 1 1 auto; }
+  .ola-botoes { width: 100%; }
+  .ola-botoes .btn { flex: 1 1 auto; justify-content: center; }
   .cat-capa { height: 200px; }
   .cat-capa img { max-height: 164px; }
 }

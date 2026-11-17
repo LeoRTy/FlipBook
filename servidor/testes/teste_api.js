@@ -159,10 +159,122 @@ async function testes() {
     confere("id inválido dá 404", r.status === 404);
     r = await fetch(BASE + "/app.js");
     confere("o Compartilhar oferece baixar o arquivo além de enviar por aplicativo", /Baixar o arquivo/.test(await r.text()));
+
+    await testesCarregar();
+}
+
+/* Carregar catálogo (1.3.0): um .html de catálogo (do Compartilhar deste Montador ou da página do FlipBook) vira
+   catálogo da biblioteca. O teste sobe o Montador com CATALOGO_MAX_CARREGAR_MB=6 para conferir o limite do arquivo
+   sem mandar 60 MB. */
+const carregar = (quem, html, titulo, extra = {}) => pedir(quem, "POST", "/api/carregar?titulo=" + encodeURIComponent(titulo) + "&arquivo=teste.html",
+    Buffer.from(html, "utf8"), { "Content-Type": "text/html; charset=utf-8", ...extra });
+/** Monta um arquivo igual ao que o Compartilhar da página do FlipBook gera (window.CATALOG = {...}; no primeiro script). */
+const arquivoFlipbook = (d) => `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${d.title || "Catálogo"}</title></head><body>
+<script>window.CATALOG = ${JSON.stringify(d).replace(/</g, "\\u003c")};if(window.CATALOG)document.documentElement.className='viewer-only';</script>
+<div id="builder"></div>
+<script>const MARK = 'window.CATALOG' + ' = null;'; let html = SRC.replace(MARK, () => 'window.CATALOG = ' + json + ';');</script>
+</body></html>`;
+const baixarImagem = async (id) => Buffer.from(await (await fetch(BASE + "/api/imagens/" + id, { headers: { "x-teste-email": ANA } })).arrayBuffer());
+
+async function testesCarregar() {
+    // um catálogo deste Montador, com capa, uma página com imagem e textos, contracapa e aparência fora do padrão
+    let r = await pedir(ANA, "POST", "/api/catalogos", { titulo: "Para carregar" });
+    const orig = r.dados.id;
+    const iCapa = (await pedir(ANA, "POST", `/api/catalogos/${orig}/imagens?r=1`, JPEG)).dados.id;
+    const iPag = (await pedir(ANA, "POST", `/api/catalogos/${orig}/imagens?r=1`, JPEG)).dados.id;
+    const iContra = (await pedir(ANA, "POST", `/api/catalogos/${orig}/imagens?r=1`, JPEG)).dados.id;
+    let c = (await pedir(ANA, "GET", "/api/catalogos/" + orig)).dados;
+    Object.assign(c.dados, { capa: { img: iCapa, r: 1 }, contracapa: { img: iContra, r: 1 } });
+    c.dados.paginas[0] = { ...c.dados.paginas[0], img: iPag, r: 1, nome: "Vaso <b>Grande</b>", preco: "R$ 89,90", descricao: "Polietileno" };
+    Object.assign(c.dados.aparencia, { destaque: "#123456", numeros: false, info: true, whatsapp: "55 11 97777-6666", logo: true });
+    await pedir(ANA, "PUT", "/api/catalogos/" + orig, { dados: c.dados, base: c.atualizado_em });
+    const doServidor = (await pedir(ANA, "GET", `/api/catalogos/${orig}/exportar`)).texto;
+
+    r = await carregar(ANA, doServidor, "Veio do Montador");
+    const g = r.dados;
+    confere("carrega o arquivo do Compartilhar deste Montador", r.status === 200 && g.formato === "servidor" && g.paginas === 2 && g.imagens === 3 && g.avisos.length === 0 && g.id !== orig, JSON.stringify(r.dados));
+    let novo = (await pedir(ANA, "GET", "/api/catalogos/" + g.id)).dados.dados;
+    confere("o catálogo carregado tem o nome escolhido, a aparência, a numeração e os textos do arquivo",
+        novo.titulo === "Veio do Montador" && novo.aparencia.destaque === "#123456" && novo.aparencia.numeros === false && novo.aparencia.info === true &&
+        novo.aparencia.whatsapp === "55 11 97777-6666" && novo.aparencia.logo === true && novo.paginas[0].nome === "Vaso <b>Grande</b>" && novo.paginas[0].preco === "R$ 89,90", JSON.stringify(novo));
+    confere("as imagens do catálogo carregado são cópias próprias, iguais às do arquivo, e a proporção vem da própria imagem",
+        novo.capa.img && novo.capa.img !== iCapa && (await baixarImagem(novo.capa.img)).equals(JPEG) && (await baixarImagem(novo.paginas[0].img)).equals(JPEG) &&
+        (await baixarImagem(novo.contracapa.img)).equals(JPEG) && novo.paginas[0].r === 1 && novo.capa.r === 1, JSON.stringify([novo.capa, novo.paginas[0]]));
+    r = await pedir(ANA, "GET", "/api/catalogos");
+    confere("o catálogo carregado aparece na biblioteca como os outros", r.dados.some((x) => x.id === g.id && x.titulo === "Veio do Montador" && x.capa === novo.capa.img));
+    r = await pedir(ANA, "POST", `/api/catalogos/${g.id}/duplicar`);
+    const dup = r.dados.id;
+    novo.paginas[1].nome = "Editado depois";
+    r = await pedir(ANA, "PUT", "/api/catalogos/" + g.id, { dados: novo });
+    confere("o catálogo carregado se edita, duplica, compartilha e exclui como qualquer outro",
+        r.status === 200 && dup && (await pedir(ANA, "GET", `/api/catalogos/${g.id}/exportar`)).texto.includes("Editado depois") &&
+        (await pedir(ANA, "DELETE", "/api/catalogos/" + dup)).status === 200);
+    r = await carregar(ANA, doServidor.replace('"fundo":"#1f1c24"', '"fundo":"url(javascript:alert(1))"'), "Mexido");
+    confere("cor mexida no arquivo vira a cor padrão", r.status === 200 && (await pedir(ANA, "GET", "/api/catalogos/" + r.dados.id)).dados.dados.aparencia.fundo === "#1f1c24", JSON.stringify(r.dados));
+
+    // arquivo da página do FlipBook: textos com HTML, imagem por link, imagem PNG, imagem grande demais e ids repetidos
+    const flip = { title: "Casa Aurora · Catálogo 2027", whatsapp: "55 11 98888-7777", bg: "#2b3a55", showInfo: true,
+        cover: { img: "data:image/jpeg;base64," + JPEG.toString("base64"), r: 0.7 }, back: { img: "" },
+        pages: [
+            { id: "abc12345", img: "data:image/jpeg;base64," + JPEG.toString("base64"), r: 1, name: 'Vaso <img src=x onerror=alert(1)>', price: "R$ 10", desc: "</script><script>alert(1)</script>" },
+            { id: "abc12345", img: "https://exemplo.com/foto.jpg", r: 0.7, name: "Por link" },
+            { id: "x", img: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", r: 1 },
+            { id: "y", img: "data:image/jpeg;base64,/9j/" + "A".repeat(5800000), r: 1 }
+        ] };
+    r = await carregar(ANA, arquivoFlipbook(flip), "Do FlipBook");
+    const f = r.dados;
+    confere("carrega o arquivo da página do FlipBook e avisa das imagens que não deu para ler",
+        r.status === 200 && f.formato === "flipbook" && f.paginas === 4 && f.imagens === 2 && f.avisos.length === 3 &&
+        /Página 2: imagem fora do arquivo/.test(f.avisos[0]) && /Página 3: imagem em formato não aceito/.test(f.avisos[1]) && /Página 4: imagem grande demais/.test(f.avisos[2]), JSON.stringify(r.dados));
+    novo = (await pedir(ANA, "GET", "/api/catalogos/" + f.id)).dados.dados;
+    confere("da página do FlipBook vêm o fundo, o WhatsApp, nome/preço/descrição e a numeração; logo desligado e as outras cores do padrão",
+        novo.titulo === "Do FlipBook" && novo.aparencia.fundo === "#2b3a55" && novo.aparencia.info === true && novo.aparencia.whatsapp === "55 11 98888-7777" &&
+        novo.aparencia.numeros === true && novo.aparencia.logo === false && novo.aparencia.destaque === "#c2410c" && novo.contracapa.img === "" &&
+        novo.paginas[1].img === "" && novo.paginas[2].img === "" && novo.paginas[3].img === "" && novo.paginas[1].nome === "Por link", JSON.stringify(novo));
+    confere("cada página carregada ganha id próprio (o arquivo repetia)", new Set(novo.paginas.map((p) => p.id)).size === 4);
+    confere("texto com HTML entra como texto puro", novo.paginas[0].nome === "Vaso <img src=x onerror=alert(1)>" && novo.paginas[0].descricao === "</script><script>alert(1)</script>");
+    r = await pedir(ANA, "GET", `/api/catalogos/${f.id}/exportar`);
+    confere("o texto com HTML não vira código no arquivo do cliente", r.status === 200 && !r.texto.includes("<img src=x") && !r.texto.includes("</script><script>alert(1)") && r.texto.includes("\\u003cimg src=x"));
+
+    // arquivos que não são catálogo, ou mexidos
+    r = await carregar(ANA, "<!DOCTYPE html><html><body><h1>Oi</h1><script>alert(1)</script></body></html>", "Qualquer");
+    confere("arquivo que não é catálogo é recusado com mensagem clara", r.status === 400 && /Não encontrei um catálogo/.test(r.dados.erro), JSON.stringify(r.dados));
+    r = await carregar(ANA, "<html><script>window.CATALOG = null;if(window.CATALOG)x();</script></html>", "Vazio");
+    confere("o montador do FlipBook sem catálogo dentro é recusado", r.status === 400 && /sem catálogo dentro/.test(r.dados.erro), JSON.stringify(r.dados));
+    r = await carregar(ANA, arquivoFlipbook(flip).replace("};if(window.CATALOG)", ";if(window.CATALOG)"), "Cortado");
+    confere("catálogo cortado ou mexido é recusado", r.status === 400 && /incompleto ou foi alterado/.test(r.dados.erro), JSON.stringify(r.dados));
+    r = await carregar(ANA, arquivoFlipbook({ title: "Sem fotos", cover: { img: "" }, back: { img: "" }, pages: [{ img: "" }, { img: "" }] }), "Sem fotos");
+    confere("catálogo sem nenhuma imagem é recusado", r.status === 400 && /não tem nenhuma imagem/.test(r.dados.erro), JSON.stringify(r.dados));
+    r = await carregar(ANA, arquivoFlipbook({ title: "Grande", cover: flip.cover, back: { img: "" }, pages: Array.from({ length: 301 }, () => ({ img: "" })) }), "Grande");
+    confere("catálogo com mais páginas que o limite é recusado", r.status === 400 && /301 páginas e o limite do Montador é 300/.test(r.dados.erro), JSON.stringify(r.dados));
+    r = await carregar(ANA, doServidor, "   ");
+    confere("carregar sem nome é recusado", r.status === 400 && /nome/.test(r.dados.erro));
+    r = await carregar(ANA, doServidor, "Tipo errado", { "Content-Type": "image/jpeg" });
+    confere("carregar algo que não é .html é recusado", r.status === 415);
+    r = await carregar(ANA, "<html>" + "x".repeat(6.5 * 1024 * 1024) + "</html>", "Grande demais");
+    confere("arquivo grande demais é recusado com a mensagem do limite", r.status === 413 && /limite de 6,0 MB/.test(r.dados.erro), JSON.stringify(r.dados).slice(0, 200));
+
+    // quem não pode
+    const antes = (await pedir(ANA, "GET", "/api/catalogos")).dados.length;
+    r = await carregar(CAIO, doServidor, "Leitor tentando");
+    confere("leitor não carrega catálogo", r.status === 403, JSON.stringify(r.dados));
+    r = await fetch(BASE + "/api/carregar?titulo=Sem", { method: "POST", headers: { "X-Catalogo": "1", "Content-Type": "text/html" }, body: doServidor });
+    confere("sem o cabeçalho de identificação, não carrega", r.status === 401);
+    r = await carregar(ANA, doServidor, "Sem o cabeçalho", { "X-Catalogo": "" });
+    confere("carregar sem o cabeçalho da tela é recusado", r.status === 403);
+    confere("nenhuma tentativa recusada deixou catálogo na biblioteca", (await pedir(ANA, "GET", "/api/catalogos")).dados.length === antes);
+
+    // a tela
+    r = await pedir(ANA, "GET", "/");
+    confere("a página carrega o leitor de catálogo", /ler-catalogo\.js\?v=/.test(r.texto));
+    r = await pedir(ANA, "GET", "/app.js");
+    confere("a biblioteca tem o botão Carregar catálogo e a ajuda dele", r.texto.includes("Carregar catálogo") && r.texto.includes("Como carregar um catálogo"));
+    r = await pedir(ANA, "GET", "/api/eu");
+    confere("a tela recebe o limite do arquivo", r.dados.maxCarregar === 6 * 1024 * 1024, JSON.stringify(r.dados.maxCarregar));
 }
 
 const proc = spawn(process.execPath, [path.join(__dirname, "..", "server.js")], {
-    env: { ...process.env, PORT: String(PORTA), DADOS: pasta, AMBIENTE: "teste", IDENTIDADE_CABECALHO: "x-teste-email", ADMINS: ANA, NODE_NO_WARNINGS: "1" },
+    env: { ...process.env, PORT: String(PORTA), DADOS: pasta, AMBIENTE: "teste", IDENTIDADE_CABECALHO: "x-teste-email", ADMINS: ANA, CATALOGO_MAX_CARREGAR_MB: "6", NODE_NO_WARNINGS: "1" },
     stdio: ["ignore", "pipe", "pipe"]
 });
 let saida = "";

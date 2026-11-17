@@ -32,6 +32,7 @@ const P = {
   check: '<path d="M20 6 9 17l-5-5"/>',
   save: '<path d="M5 3h11l4 4v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M8 3v5h7V3M7 21v-7h10v7"/>',
   undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+  arquivo: '<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M12 11v6m-3-3 3 3 3-3"/>',
   github: '<path d="M9 19c-4.500 1.400-4.500-2.500-6-3m12 5v-3.500c0-1 .1-1.400-.5-2 2.800-.300 5.500-1.400 5.500-6a4.600 4.600 0 0 0-1.300-3.200 4.200 4.200 0 0 0-.1-3.200s-1.100-.300-3.500 1.300a12 12 0 0 0-6.200 0C6.500 2.800 5.400 3.100 5.400 3.100a4.200 4.200 0 0 0-.1 3.200A4.600 4.600 0 0 0 4 9.500c0 4.600 2.700 5.700 5.500 6-.6.600-.6 1.200-.5 2V21"/>'
 };
 const ic = (n, cls = "") => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n] || P.book}</svg>`;
@@ -48,11 +49,20 @@ const AJUDA = {
     "<b>Retirar</b> devolve a pessoa ao papel de leitor."]],
   lista: ["Como funciona o Montador de Catálogo", "Aqui ficam os catálogos da empresa, sempre com as últimas edições.", [
     "<b>Novo catálogo</b> abre o editor em branco. O catálogo só passa a existir quando você clica em <b>Salvar</b>.",
+    "<b>Carregar catálogo</b> traz para cá um catálogo que chegou num arquivo .html (gerado pelo Compartilhar deste Montador ou da página do FlipBook). Ele vira mais um catálogo da biblioteca, para editar ou mandar de novo.",
     "<b>Editar</b> (ou clicar na capa) abre o catálogo para mexer. As alterações só valem depois do <b>Salvar</b>.",
     "<b>Compartilhar</b> gera o arquivo para mandar ao cliente por WhatsApp ou e-mail. Ele abre e folheia, sem precisar de login. Você escolhe entre <b>Enviar por aplicativo</b> e <b>Baixar o arquivo</b> (para abrir no seu computador ou mandar depois).",
     "<b>Duplicar</b> cria uma cópia, boa para fazer uma versão nova sem perder a antiga.",
     "<b>Excluir</b> apaga o catálogo e as imagens dele. Arquivos que você já mandou a clientes continuam funcionando.",
     "Os catálogos são de todos: quem tem acesso ao Montador vê e edita os mesmos."]],
+  carregar: ["Como carregar um catálogo", "Traga para a biblioteca um catálogo que chegou num arquivo .html.", [
+    "Serve para o arquivo gerado pelo <b>Compartilhar</b> deste Montador e para o arquivo da <b>página do FlipBook</b> (a versão de arquivo único, que qualquer pessoa pode usar). Exemplo: alguém de fora monta o catálogo na página do FlipBook e manda o arquivo para você.",
+    "Clique em <b>Carregar catálogo</b>, escolha o arquivo .html e confira o nome. Ao clicar em <b>Carregar</b>, ele vira mais um catálogo da biblioteca: dá para editar, duplicar, compartilhar e excluir como qualquer outro.",
+    "Vêm do arquivo: capa, páginas, contracapa, nome, preço e descrição dos produtos, WhatsApp, cores e numeração. A página do FlipBook só traz a cor do fundo: as outras cores ficam as do padrão e o logo começa desligado (dá para ligar em <i>Aparência e textos</i>).",
+    "Se alguma imagem não puder ser lida, a página entra em branco e o Montador avisa qual foi. Depois é só abrir o catálogo e colocar a imagem certa.",
+    "O Montador só lê o catálogo de dentro do arquivo: nada do arquivo é executado e ele mesmo não fica guardado. Aceita imagens JPEG de até 4 MB cada e o arquivo inteiro até 60 MB.",
+    "Não dá para carregar: arquivo que não é catálogo, o montador do FlipBook ainda vazio (sem ter clicado em Compartilhar) e a primeira versão do FlipBook, que guarda as imagens numa pasta separada.",
+    "Quem carrega é quem cria catálogos: editor e administrador."]],
   editor: ["Como montar o catálogo", "Carregue as páginas, ajuste a aparência e compartilhe.", [
     "<b>Páginas:</b> clique em um quadro para enviar a imagem. A capa é a primeira e a contracapa a última. Em <i>Adicionar páginas prontas</i> dá para escolher várias de uma vez: cada imagem vira uma página, na ordem escolhida.",
     "<b>Tamanho:</b> o catálogo adota o formato da capa. Use todas as páginas no mesmo tamanho (por exemplo A4 em pé) para nada ficar cortado.",
@@ -93,7 +103,7 @@ const S = { eu: null, erro: null, lista: null, cat: null, id: null, base: null, 
 async function api(metodo, caminho, corpo, bruto) {
   const cab = { "X-Catalogo": "1" };
   if (corpo !== undefined && !bruto) cab["Content-Type"] = "application/json";
-  if (bruto) cab["Content-Type"] = "image/jpeg";
+  if (bruto) cab["Content-Type"] = typeof bruto === "string" ? bruto : "image/jpeg";   // corpo cru: imagem (padrão) ou o tipo pedido
   const r = await fetch("api" + caminho, { method: metodo, headers: cab, body: corpo === undefined ? undefined : bruto ? corpo : JSON.stringify(corpo), redirect: "manual", cache: "no-store" });
   if (r.type === "opaqueredirect" || r.status === 0) { location.reload(); throw new Error("Seu login expirou. Recarregando…"); }
   let dados = null;
@@ -158,7 +168,10 @@ function telaLista() {
       </div></article>`).join("");
   return `${topo()}<main class="wrap">
     <section class="ola linha"><div><h1>Catálogos</h1><p>${edita ? "Escolha um catálogo salvo para editar ou compartilhar, ou crie um novo. Tudo o que você salva fica guardado aqui." : "Escolha um catálogo para visualizar ou compartilhar com o cliente. Para criar ou editar, peça a um administrador do Montador."}</p></div>
-      ${edita ? `<button class="btn forte" data-a="novo">${ic("plus")} Novo catálogo</button>` : ""}</section>
+      ${edita ? `<div class="ola-botoes">
+        <button class="btn" data-a="carregar" title="Trazer para a biblioteca um catálogo que veio num arquivo .html">${ic("arquivo")} Carregar catálogo</button>
+        <input type="file" id="carregar-arq" accept=".html,.htm,text/html" hidden>
+        <button class="btn forte" data-a="novo">${ic("plus")} Novo catálogo</button></div>` : ""}</section>
     ${ajudaHtml("lista")}
     ${L === null ? `<div class="vazio">Carregando…</div>` : L.length ? `<div class="cats">${cartoes}</div>`
       : `<div class="vazio">${edita ? 'Nenhum catálogo ainda. Clique em "Novo catálogo" para montar o primeiro.' : "Nenhum catálogo ainda."}</div>`}
@@ -456,6 +469,64 @@ function visualizar(c = S.cat) {
   S.previa = Revista.montar($("#revista"), dados, { previa: true, aoFechar: () => { S.previa = null; $("#app").hidden = false; } });
 }
 
+/* ───────────── Carregar catálogo (1.3.0) ─────────────
+   A pessoa escolhe um .html de catálogo (do Compartilhar deste Montador ou da página do FlipBook). A tela só lê o nome e o número de
+   páginas, com o mesmo leitor do servidor (ler-catalogo.js), e pede o nome do catálogo. Quem confere tudo (formato,
+   imagens, tamanhos, permissão) e grava é o servidor. O HTML escolhido nunca é aberto nem executado aqui. */
+const mbTexto = (n) => (n / 1048576).toFixed(1).replace(".", ",");
+async function escolherCarregar(arq) {
+  if (!arq) return;
+  const max = S.eu.maxCarregar || 60 * 1048576;
+  const recusar = (html) => perguntar("Não deu para carregar este arquivo", html, [{ texto: "Entendi", forte: true }]);
+  if (!/\.html?$/i.test(arq.name) && arq.type !== "text/html") return recusar(`<b>${esc(arq.name)}</b> não é um arquivo .html. Escolha o arquivo do catálogo, que termina em <b>.html</b>.`);
+  if (arq.size > max) return recusar(`O arquivo <b>${esc(arq.name)}</b> tem ${mbTexto(arq.size)} MB e o limite para carregar é ${mbTexto(max)} MB.`);
+  toast("Lendo o arquivo…");
+  let lido;
+  try { lido = LerCatalogo.extrair(await arq.text()); }
+  catch (e) { return recusar(esc(e.message)); }
+  // conta só as imagens que vêm dentro do arquivo (as por link o servidor ignora e avisa)
+  const imagens = [lido.capa, lido.contracapa, ...lido.paginas].filter((f) => /^data:image\//i.test(f.img)).length;
+  const titulo = (lido.titulo || arq.name.replace(/\.html?$/i, "").replace(/[-_]+/g, " ")).trim().slice(0, 80);
+  S.formCarregar = { arquivo: arq, nome: arq.name, tamanho: arq.size, formato: lido.formato, paginas: lido.paginas.length, imagens, titulo, erro: "", enviando: false };
+  render();
+  const campo = $("#cc-titulo"); if (campo) { campo.focus(); campo.select(); }
+}
+function janelaCarregar() {
+  const f = S.formCarregar; if (!f) return "";
+  const n = f.paginas, trava = f.enviando ? "disabled" : "";
+  return `<div class="fundo" data-a="fecha-carregar-fundo"><div class="janela" role="dialog" aria-modal="true" aria-labelledby="cc-t">
+    <h2 id="cc-t">Carregar catálogo</h2>
+    ${ajudaHtml("carregar")}
+    <div class="cc-arq">${ic("arquivo")}<div><b>${esc(f.nome)}</b>
+      <span>${esc(LerCatalogo.NOME_FORMATO[f.formato] || "Arquivo de catálogo")} · capa + ${n} ${n === 1 ? "página" : "páginas"} + contracapa · ${f.imagens} ${f.imagens === 1 ? "imagem" : "imagens"} · ${mbTexto(f.tamanho)} MB</span></div></div>
+    <label class="campo"><span>Nome do catálogo</span><input id="cc-titulo" type="text" maxlength="80" value="${esc(f.titulo)}" placeholder="Ex.: Catálogo Casa Aurora" ${trava}>
+      <span class="ajuda">É o nome que aparece na biblioteca. Dá para mudar depois, no editor.</span></label>
+    <p class="nota cc-nota">Vira um catálogo novo da biblioteca, com as páginas, as imagens, a aparência e a numeração do arquivo. O arquivo em si não fica guardado.</p>
+    <div class="erro" id="cc-erro" role="alert">${esc(f.erro)}</div>
+    <div class="fim"><button class="btn" data-a="fecha-carregar" ${trava}>Cancelar</button>
+      <button class="btn forte" data-a="carregar-enviar" ${trava}>${ic("arquivo")} ${f.enviando ? "Carregando…" : "Carregar"}</button></div>
+  </div></div>`;
+}
+function fecharCarregar() { if (S.formCarregar && !S.formCarregar.enviando) { S.formCarregar = null; render(); } }
+async function enviarCarregar() {
+  const f = S.formCarregar; if (!f || f.enviando) return;
+  const titulo = f.titulo.trim();
+  if (!titulo) { f.erro = "Dê um nome ao catálogo."; render(); const c = $("#cc-titulo"); if (c) c.focus(); return; }
+  f.enviando = true; f.erro = ""; render();
+  let r;
+  try { r = await api("POST", `/carregar?titulo=${encodeURIComponent(titulo)}&arquivo=${encodeURIComponent(f.nome)}`, f.arquivo, "text/html"); }
+  catch (e) { f.enviando = false; f.erro = e.message; render(); return; }
+  S.formCarregar = null;
+  try { await carregarLista(); } catch { /* fica a lista de antes */ }
+  render();
+  const avisos = r.avisos || [];
+  const lista = avisos.slice(0, 6).map((a) => "• " + esc(a)).join("<br>") + (avisos.length > 6 ? `<br>• e mais ${avisos.length - 6}` : "");
+  const i = await perguntar("Catálogo carregado!", `<b>${esc(r.titulo)}</b> entrou na biblioteca com capa + ${r.paginas} ${r.paginas === 1 ? "página" : "páginas"} + contracapa. Dá para editar, duplicar e compartilhar como qualquer outro.` +
+      (avisos.length ? `<br><br><b>${avisos.length === 1 ? "Uma imagem não pôde ser lida" : avisos.length + " imagens não puderam ser lidas"}</b>, e a página ficou em branco:<br>${lista}<br>Abra o catálogo e coloque a imagem certa nessas páginas.` : ""),
+    [{ texto: "Ficar nos catálogos" }, { texto: "Abrir para editar", forte: true }], !avisos.length);
+  if (i === 1) await abrir(r.id);
+}
+
 /* ───────────── render e eventos ───────────── */
 function render() {
   let html;
@@ -465,7 +536,7 @@ function render() {
   else html = S.tela === "admin" ? telaAdmin() : S.cat ? telaEditor() : telaLista();
   const foco = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset : {};
   const rolagem = scrollY;
-  $("#app").innerHTML = html + janela() + ajudaJanela();
+  $("#app").innerHTML = html + janelaCarregar() + janela() + ajudaJanela();
   document.title = (S.eu && S.eu.ambiente === "teste" ? "[TESTE] " : "") + (S.cat ? (S.cat.titulo || "Catálogo novo") + " · " : "") + "Montador de Catálogo";
   document.querySelectorAll("[data-fundo]").forEach((el) => el.style.setProperty("--fundo", el.dataset.fundo));
   const pg = $("#paginas"); if (pg) pg.style.setProperty("--r", proporcao());
@@ -509,6 +580,10 @@ document.addEventListener("click", async (e) => {
       case "modal-botao": fecharModal(Number(k)); return;
       case "fecha-modal-fundo": if (e.target === el) fecharModal(-1); return;
       case "novo": novo(); return;
+      case "carregar": { const inp = $("#carregar-arq"); if (inp) inp.click(); return; }
+      case "carregar-enviar": await enviarCarregar(); return;
+      case "fecha-carregar": fecharCarregar(); return;
+      case "fecha-carregar-fundo": if (e.target === el) fecharCarregar(); return;
       case "editar": await abrir(k); return;
       case "ver": { const r = await api("GET", "/catalogos/" + k); visualizar(r.dados); return; }
       case "salvar": await salvarCatalogo(); return;
@@ -543,6 +618,7 @@ document.addEventListener("change", async (e) => {
     catch (err) { toast(err.message); }
     render(); return;
   }
+  if (t.id === "carregar-arq") { const arq = t.files[0]; t.value = ""; try { await escolherCarregar(arq); } catch (err) { toast(err.message); } return; }
   if (!S.cat) return;
   if (t.id === "varias") {
     const arquivos = [...t.files]; t.value = "";
@@ -572,6 +648,7 @@ document.addEventListener("change", async (e) => {
 });
 document.addEventListener("input", (e) => {
   const t = e.target;
+  if (t.id === "cc-titulo" && S.formCarregar) { S.formCarregar.titulo = t.value; return; }
   if (!S.cat) return;
   if (t.dataset.c) { S.cat[t.dataset.c] = t.value; tocou(); }
   else if (t.dataset.ap && t.type !== "checkbox") { S.cat.aparencia[t.dataset.ap] = t.value; tocou(); }
@@ -579,7 +656,8 @@ document.addEventListener("input", (e) => {
 });
 document.addEventListener("toggle", (e) => { if (e.target.matches && e.target.matches("details.bloco-ed")) S.aparenciaAberta = e.target.open; }, true);
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !S.previa) { if (S.ajuda) fecharAjuda(); else if (S.modal) fecharModal(-1); else if (S.credito) { S.credito = false; render(); } }
+  if (e.key === "Escape" && !S.previa) { if (S.ajuda) fecharAjuda(); else if (S.modal) fecharModal(-1); else if (S.formCarregar) fecharCarregar(); else if (S.credito) { S.credito = false; render(); } }
+  if (e.key === "Enter" && e.target.id === "cc-titulo") { e.preventDefault(); enviarCarregar(); }
   // Ctrl+S (ou Cmd+S) salva o catálogo aberto
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && S.cat && !S.previa && !S.modal) { e.preventDefault(); salvarCatalogo(); }
 });

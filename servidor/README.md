@@ -20,6 +20,10 @@ catálogo de outro computador.
 - **Ajuda na tela:** o "i" de cada tela abre um pop-up com o botão Entendi.
 - **Compartilhar** gera no servidor um arquivo HTML único, com as imagens embutidas. A pessoa escolhe entre enviar por um aplicativo do aparelho ou baixar o arquivo. O cliente abre no celular ou no
   computador e folheia, sem login. O arquivo continua funcionando mesmo que o catálogo seja excluído depois.
+- **Carregar catálogo** (1.3.0): traz para a biblioteca um catálogo que chegou num arquivo .html, gerado pelo
+  Compartilhar deste Montador ou da página do FlipBook (a versão de arquivo único). Exemplo: alguém de fora monta o
+  catálogo na página do FlipBook e manda o arquivo; você carrega e passa a ter essa versão para editar ou reenviar.
+  Veja "Carregar catálogo" abaixo.
 - **Papéis por pessoa:** leitor (vê, visualiza e compartilha), editor (cria, edita, duplica e exclui) e
   administrador (dá os papéis, convidando pelo e-mail).
 - **Ajuda na tela:** um "i" em cada tela explica para que serve e como usar.
@@ -81,6 +85,35 @@ Quem entra sem papel definido é **leitor**. Um administrador abre o selo "Admin
 pessoa e escolhe Leitor ou Editor. O convite não envia e-mail: o papel passa a valer na próxima vez que a pessoa
 abrir o Montador.
 
+## Carregar catálogo
+
+Na biblioteca, **Carregar catálogo** (ao lado de "Novo catálogo", só para editor e administrador) pede um arquivo
+.html, mostra de onde ele veio, quantas páginas e imagens tem e o nome que está dentro dele, e pede o nome do
+catálogo. Ao clicar em **Carregar**, o catálogo entra na biblioteca (grava na hora, como o Duplicar) e se edita,
+duplica, compartilha e exclui como qualquer outro.
+
+| De onde vem | Onde o catálogo está dentro do .html | O que entra |
+|---|---|---|
+| Compartilhar deste Montador | `Revista.montar(document.getElementById("revista"), {...});` | tudo: páginas, imagens, textos, cores, logo, numeração, WhatsApp e textos dos botões |
+| Compartilhar da página do FlipBook (`index.html` e o montador baixado) | `window.CATALOG = {...};` | páginas, imagens, nome/preço/descrição, WhatsApp, cor do fundo e "mostrar nome e preço". A página não tem cor de destaque, cor do papel nem logo, e sempre numera: entra com a numeração ligada, o logo desligado e as outras cores do `PADRAO` |
+
+Não dá para carregar (a mensagem diz o motivo): arquivo que não é catálogo, o montador do FlipBook ainda vazio (sem
+ter clicado em Compartilhar), catálogo cortado ou mexido, catálogo sem nenhuma imagem, mais de 300 páginas e a
+primeira versão do FlipBook (`versao-antiga/`), que guarda as imagens numa pasta.
+
+**Segurança** (o arquivo vem de fora e pode ter sido mexido):
+
+- Só os **dados** do catálogo são lidos, como texto (`public/ler-catalogo.js`, o mesmo para a tela e o servidor). O
+  HTML nunca é executado, servido nem guardado.
+- Imagens só JPEG embutido no arquivo (`data:image/jpeg;base64,...`), conferido pelo cabeçalho do JPEG, até 4 MB cada.
+  Imagem por link, em outro formato, grande demais ou danificada não entra: a página fica em branco e a tela avisa
+  qual foi.
+- Textos passam pela mesma limpeza do Salvar (texto puro, com tamanho máximo) e sempre saem escapados; cor inválida
+  vira a cor padrão.
+- Arquivo de até 60 MB (cerca de 200 páginas). Passou disso, o servidor descarta o resto e responde 413 com a mensagem.
+- Rota: `POST /api/carregar?titulo=<nome>&arquivo=<nome do arquivo>`, corpo = o .html (`Content-Type: text/html`), com
+  o mesmo cabeçalho `X-Catalogo: 1` das outras mudanças.
+
 ## Personalizar
 
 - **Cores e fonte das telas:** `public/tema.css`.
@@ -95,11 +128,14 @@ abrir o Montador.
 node testes/teste_api.js
 ```
 
-Sobe um servidor descartável numa pasta temporária e confere 49 pontos: criar, salvar, enviar imagem, duplicar,
-excluir, gerar o arquivo do cliente, edição simultânea, papéis e recusas.
+Sobe um servidor descartável numa pasta temporária e confere 75 pontos: criar, salvar, enviar imagem, duplicar,
+excluir, gerar o arquivo do cliente, edição simultânea, papéis, recusas e o Carregar catálogo (arquivo deste
+Montador e da página do FlipBook, textos com HTML, imagens ruins, arquivos que não são catálogo, grande demais e quem
+não pode).
 
 ## Limites
 
 - Até 300 páginas por catálogo e 4 MB por imagem (a tela reduz cada imagem para no máximo 1600 px antes de enviar).
+- Carregar catálogo: arquivo .html de até 60 MB, com imagens JPEG de até 4 MB cada.
 - Excluir não tem lixeira: a tela pede confirmação.
 - Os catálogos são de todos que entram; quem edita é definido pelos papéis.
