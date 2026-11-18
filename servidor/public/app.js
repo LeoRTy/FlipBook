@@ -24,6 +24,10 @@ const P = {
   info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
   eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.600 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
   shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  bell: '<path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.500-3.500"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   share: '<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 15V3m0 0L8 7m4-4 4 4"/>',
   copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
   trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
@@ -41,12 +45,30 @@ const CREDITO = { nome: "Leonardo Teixeira", descricao: "Desenvolvedor e criador
 
 /* ajuda na tela (o "i") */
 const AJUDA = {
-  admin: ["Para que serve a Administração do Montador", "Aqui você decide o que cada pessoa pode fazer no Montador de Catálogo.", [
-    "<b>Leitor</b> vê os catálogos, visualiza e compartilha com clientes. Não cria, não edita e não exclui. É o papel de quem ainda não recebeu outro.",
-    "<b>Editor</b> faz tudo isso e também cria, edita, duplica e exclui catálogos.",
-    "<b>Administrador</b> vem da configuração do servidor: faz tudo e abre esta tela.",
-    "Para <b>convidar</b>, digite o e-mail da empresa, escolha o papel e clique em Adicionar. A pessoa não recebe e-mail: o papel passa a valer na próxima vez que ela abrir o Montador.",
-    "<b>Retirar</b> devolve a pessoa ao papel de leitor."]],
+  admin: ["Para que serve a Administração do Montador", "Aqui você vê todas as pessoas do Montador de Catálogo e decide o que cada uma pode fazer.", [
+    "A lista mostra <b>todas as pessoas</b>: quem já abriu o Montador (entra na lista sozinha no primeiro acesso, com a data do primeiro e do último acesso), quem foi convidado e os administradores. Use a busca e o filtro para achar alguém.",
+    "<b>Aguardando liberação:</b> a pessoa abriu o Montador e ainda não tem papel. Ela só vê um aviso. Clique em <b>Liberar</b> e escolha o papel. O <b>sininho</b> no topo mostra quantas estão esperando e abre esta lista já filtrada.",
+    "<b>Leitor</b> vê os catálogos, visualiza e compartilha com clientes. Não cria, não edita e não exclui.",
+    "<b>Editor</b> faz tudo isso e também cria, edita, duplica, carrega e exclui catálogos.",
+    "<b>Administrador</b> vem da configuração do servidor (variável ADMINS): faz tudo e abre esta tela. Esse papel não muda por aqui.",
+    "<b>Sem acesso</b> barra a pessoa: ela vê só um aviso e não aparece no sininho. Dá para liberar depois, em <b>Editar papel</b>.",
+    "<b>Convidar por e-mail</b> dá o papel a alguém antes de a pessoa entrar. Não é enviado e-mail: o papel vale quando ela abrir o Montador.",
+    "Quem consegue chegar até o Montador é decidido pelo login da empresa, na frente do servidor. Aqui se decide o que cada um faz depois de entrar."]],
+  papel: ["O que cada papel pode fazer", "Escolha o papel e salve. Vale na próxima vez que a pessoa abrir ou atualizar o Montador.", [
+    "<b>Leitor</b> vê os catálogos, visualiza e compartilha com clientes.",
+    "<b>Editor</b> faz tudo do leitor e também cria, edita, duplica, carrega e exclui catálogos.",
+    "<b>Sem acesso</b> barra a pessoa: ela vê só um aviso, e o pedido sai do sininho. Para quem ainda está aguardando, é o mesmo que recusar o pedido.",
+    "<b>Cancelar convite</b> aparece para quem foi convidado e ainda não abriu o Montador: a pessoa sai da lista. Se ela abrir depois, aparece como aguardando liberação.",
+    "<b>Administrador</b> não aparece aqui: vem da configuração do servidor (ADMINS).",
+    "A pessoa não recebe e-mail. Para ela, basta abrir o Montador de novo (ou clicar em <i>Verificar de novo</i> no aviso)."]],
+  espera: ["O que é aguardando liberação", "Você já entrou, mas ainda não tem um papel no Montador de Catálogo.", [
+    "Quem abre o Montador pela primeira vez fica <b>aguardando liberação</b>. O pedido é registrado sozinho e aparece para os administradores, no sininho do topo.",
+    "Um administrador escolhe o seu papel: <b>Leitor</b> (vê e compartilha os catálogos) ou <b>Editor</b> (também cria, edita e exclui).",
+    "Não chega e-mail quando o acesso é liberado. Clique em <b>Verificar de novo</b> ou abra o Montador mais tarde."]],
+  semacesso: ["Por que estou sem acesso", "Um administrador do Montador de Catálogo não liberou a sua entrada.", [
+    "Quem abre o Montador pela primeira vez fica aguardando liberação, e um administrador escolhe o papel de cada pessoa. No seu caso, ele marcou <b>Sem acesso</b>.",
+    "Se achar que é engano, fale com um administrador do Montador. Ele pode liberar o seu acesso a qualquer momento.",
+    "Depois que ele liberar, clique em <b>Verificar de novo</b> ou abra o Montador outra vez."]],
   lista: ["Como funciona o Montador de Catálogo", "Aqui ficam os catálogos da empresa, sempre com as últimas edições.", [
     "<b>Novo catálogo</b> abre o editor em branco. O catálogo só passa a existir quando você clica em <b>Salvar</b>.",
     "<b>Carregar catálogo</b> traz para cá um catálogo que chegou num arquivo .html (gerado pelo Compartilhar deste Montador ou da página do FlipBook). Ele vira mais um catálogo da biblioteca, para editar ou mandar de novo.",
@@ -98,7 +120,8 @@ function fecharAjuda() {
 }
 
 /* ───────────── estado ───────────── */
-const S = { eu: null, erro: null, lista: null, cat: null, id: null, base: null, salvoJson: "", credito: false, modal: null, previa: null, ajuda: false };
+const S = { eu: null, erro: null, lista: null, cat: null, id: null, base: null, salvoJson: "", credito: false, modal: null, previa: null, ajuda: false,
+  papeis: null, formPapel: null, admBusca: "", admFiltro: "todos" };
 
 async function api(metodo, caminho, corpo, bruto) {
   const cab = { "X-Catalogo": "1" };
@@ -122,6 +145,7 @@ function topo() {
       <div><div class="t1">Montador de Catálogo</div><div class="t2">${esc(p ? p.empresa : "")}</div></div></div>
     <div class="acoes">
       ${p ? `<span class="quem" title="${esc(p.email)}">${esc(p.nome)}</span>` : ""}
+      ${p && p.papel === "admin" ? sinoHtml() : ""}
       ${p && p.papel === "admin" ? `<button class="selo" data-a="admin" title="Abrir a Administração do Montador" aria-label="Administração">${ic("shield")} <span class="tx">Administrador</span></button>` : ""}
       <button class="ib" data-a="tema" aria-label="Trocar tema">${ic(temaAtual() === "dark" ? "sun" : "moon")}</button>
     </div></div></header>`;
@@ -178,27 +202,112 @@ function telaLista() {
   </main>${rodape()}`;
 }
 
-/* ───────────── administração: papéis por pessoa ───────────── */
-const NOME_PAPEL = { leitor: "Leitor (vê e compartilha)", editor: "Editor (cria, edita e exclui)" };
+/* ───────────── administração: todas as pessoas e o papel de cada uma (1.4.0) ─────────────
+   A pessoa entra na lista sozinha no primeiro acesso e fica aguardando liberação até um administrador escolher o papel.
+   O sininho do topo conta quem está aguardando e abre esta tela já filtrada. */
+const iniciais = (n) => String(n || "?").split(/ +/).filter(Boolean).slice(0, 2).map((x) => x[0]).join("").toUpperCase();
+const NOME_PAPEL = { admin: "Administrador", editor: "Editor", leitor: "Leitor", pendente: "Aguardando liberação", sem_acesso: "Sem acesso" };
+const COR_PAPEL = { admin: "ok", editor: "ok", leitor: "", pendente: "warn", sem_acesso: "no" };
+const OPCOES_PAPEL = {
+  leitor: ["Leitor", "Vê os catálogos, visualiza e compartilha com clientes. Não cria, não edita e não exclui."],
+  editor: ["Editor", "Faz tudo do leitor e também cria, edita, duplica, carrega e exclui catálogos."],
+  sem_acesso: ["Sem acesso", "A pessoa não entra: vê só um aviso e não aparece no sininho. Dá para liberar depois."],
+  "": ["Cancelar convite", "Tira o convite e a pessoa sai da lista. Se ela abrir o Montador depois, aparece como aguardando liberação."]
+};
+const FILTROS_PAPEL = [["todos", "Todos"], ["pendente", "Aguardando liberação"], ["leitor", "Leitores"], ["editor", "Editores"], ["admin", "Administradores"], ["sem_acesso", "Sem acesso"]];
+
+/* o sininho dos administradores: quantas pessoas abriram o Montador e esperam um papel */
+function sinoHtml() {
+  const n = (S.eu && S.eu.pendentes) || 0;
+  const dica = n ? `${n} ${n === 1 ? "pessoa aguardando" : "pessoas aguardando"} liberação` : "Ninguém aguardando liberação";
+  return `<button class="ib sino ${n ? "tem" : ""}" data-a="pendentes" title="${dica}" aria-label="${dica}">${ic("bell")}${n ? `<span class="sino-n">${n > 99 ? "99+" : n}</span>` : ""}</button>`;
+}
+function pessoasFiltradas() {
+  if (!S.papeis) return [];
+  const q = (S.admBusca || "").trim().toLowerCase(), f = S.admFiltro || "todos";
+  return S.papeis.pessoas.filter((p) => (f === "todos" || p.papel === f) && (!q || `${p.nome} ${p.email}`.toLowerCase().includes(q)));
+}
+function listaAdminHtml() {
+  if (!S.papeis) return `<div class="vazio">Carregando…</div>`;
+  const L = pessoasFiltradas();
+  if (!L.length) return `<div class="vazio">${S.papeis.pessoas.length ? "Ninguém encontrado. Mude a busca ou o filtro." : "Ninguém abriu o Montador ainda."}</div>`;
+  return L.map((p) => {
+    const quando = p.papel === "pendente" ? "abriu o Montador em " + dataHora(p.pediu_em)
+      : p.ultimo_acesso ? `primeiro acesso ${dataHora(p.primeiro_acesso)} · último ${dataHora(p.ultimo_acesso)}` : p.papel === "admin" ? "ainda não entrou" : "convidado, ainda não entrou";
+    const definido = p.definido_por && p.papel !== "pendente" ? ` · papel dado por ${nomeDoEmail(p.definido_por)} em ${dataHora(p.definido_em)}` : "";
+    return `<div class="item ${p.papel === "pendente" ? "pendente" : ""}"><span class="av">${esc(iniciais(p.nome))}</span>
+      <div class="txt"><div class="tt">${esc(p.nome)} <span class="pill ${COR_PAPEL[p.papel] || ""}">${NOME_PAPEL[p.papel] || esc(p.papel)}</span></div>
+        <div class="sub">${esc(p.email)} · ${esc(quando)}${esc(definido)}</div></div>
+      ${p.papel === "admin" ? `<span class="sub fixo">definido na configuração</span>`
+        : `<button class="btn mini ${p.papel === "pendente" ? "forte" : ""}" data-a="papel-editar" data-k="${esc(p.email)}">${p.papel === "pendente" ? "Liberar" : "Editar papel"}</button>`}</div>`;
+  }).join("");
+}
+const contaTexto = () => S.papeis ? `Mostrando ${pessoasFiltradas().length} de ${S.papeis.pessoas.length} ${S.papeis.pessoas.length === 1 ? "pessoa" : "pessoas"}.` : "";
 function telaAdmin() {
-  const D = S.papeis;
-  const linhas = D ? D.papeis.map((p) => `<div class="item"><span class="av">${esc(nomeDoEmail(p.email).split(" ").map((x) => x[0]).slice(0, 2).join("").toUpperCase())}</span>
-      <div class="txt"><div class="tt">${esc(nomeDoEmail(p.email))}</div><div class="sub">${esc(p.email)} · definido por ${esc(nomeDoEmail(p.criado_por))} em ${esc(dataHora(p.criado_em))}</div></div>
-      <select class="btn mini" data-papel="${esc(p.email)}" aria-label="Papel de ${esc(p.email)}">${Object.entries(NOME_PAPEL).map(([k, t]) => `<option value="${k}" ${p.papel === k ? "selected" : ""}>${t}</option>`).join("")}</select>
-      <button class="btn mini perigo" data-a="papel-tirar" data-k="${esc(p.email)}">Retirar</button></div>`).join("") : "";
+  const D = S.papeis, n = (k) => D ? D.pessoas.filter((p) => k === "todos" || p.papel === k).length : 0;
   return `${topo()}<main class="wrap">
     <div class="adm-cab"><button class="voltar" data-a="sair-admin">${ic("back")} Catálogos</button></div>
     <h1 class="adm-titulo">Administração do Montador</h1>
     <section class="painel-adm">${ajudaHtml("admin")}
-      <div class="linha-acoes convite"><input id="novo-email" class="entrada-linha" type="email" placeholder="e-mail da pessoa (nome@empresa)" maxlength="120">
-        <select id="novo-papel" class="btn" aria-label="Papel">${Object.entries(NOME_PAPEL).map(([k, t]) => `<option value="${k}">${t}</option>`).join("")}</select>
-        <button class="btn forte" data-a="papel-add">${ic("plus")} Adicionar</button></div>
-      ${!D ? `<div class="vazio">Carregando…</div>` : D.papeis.length ? `<div class="lista">${linhas}</div>`
-        : `<div class="vazio">Ninguém recebeu um papel ainda. Quem entra sem papel é leitor: vê e compartilha, mas não edita.</div>`}
+      <div class="adm-barra">
+        <label class="busca">${ic("search")}<input id="adm-busca" type="search" placeholder="Buscar por nome ou e-mail" value="${esc(S.admBusca || "")}" aria-label="Buscar pessoa"></label>
+        <select id="adm-filtro" class="btn" aria-label="Filtrar por papel">${FILTROS_PAPEL.map(([k, t]) => `<option value="${k}" ${(S.admFiltro || "todos") === k ? "selected" : ""}>${t} (${n(k)})</option>`).join("")}</select>
+        <button class="btn forte" data-a="convidar">${ic("plus")} Convidar por e-mail</button></div>
+      <div class="lista" id="adm-lista">${listaAdminHtml()}</div>
+      <p class="nota" id="adm-conta">${contaTexto()}</p>
       ${D && D.historico.length ? `<h2 class="sub-titulo">Últimas mudanças</h2><div class="lista hist">${D.historico.map((h) => `<div class="item"><time>${esc(dataHora(h.quando))}</time><div class="txt"><div class="tt">${esc(h.alvo.replace("permissão: ", ""))}</div><div class="sub">${esc(h.detalhe)} · por ${esc(nomeDoEmail(h.quem))}</div></div></div>`).join("")}</div>` : ""}
     </section></main>${rodape()}`;
 }
+/* janela para liberar um pedido, editar o papel de uma pessoa ou convidar por e-mail */
+function janelaPapel() {
+  const f = S.formPapel; if (!f) return "";
+  // "Cancelar convite" só para quem foi convidado e ainda não entrou; no convite novo, só Leitor e Editor
+  const chaves = f.convite ? ["leitor", "editor"] : f.convidado ? ["leitor", "editor", ""] : ["leitor", "editor", "sem_acesso"];
+  const opcoes = chaves.map((k) => { const [t, d] = OPCOES_PAPEL[k];
+    return `<label class="opcao"><input type="radio" name="papel" value="${k}" ${f.papel === k ? "checked" : ""}><span><b>${t}</b><small>${d}</small></span></label>`; }).join("");
+  return `<div class="fundo" data-a="fecha-form-fundo"><div class="janela" role="dialog" aria-modal="true" aria-labelledby="pp-t">
+    <h2 id="pp-t">${f.convite ? "Convidar por e-mail" : f.pendente ? "Liberar acesso" : "Editar papel"}</h2>
+    ${ajudaHtml("papel")}
+    ${f.convite ? `<label class="campo"><span>E-mail da pessoa</span><input id="pp-email" type="email" maxlength="120" placeholder="nome@empresa">
+        <span class="ajuda">Não é enviado e-mail. O papel passa a valer quando a pessoa abrir o Montador.</span></label>`
+      : `<p class="pp-quem"><b>${esc(f.nome)}</b><span>${esc(f.email)}</span></p>`}
+    <div class="opcoes" role="radiogroup" aria-label="Papel">${opcoes}</div>
+    <div class="erro" id="pp-erro" role="alert"></div>
+    <div class="fim"><button class="btn" data-a="fecha-form">Cancelar</button><button class="btn forte" data-a="papel-salvar">${f.convite ? "Convidar" : f.pendente ? "Liberar" : "Salvar"}</button></div>
+  </div></div>`;
+}
+async function salvarPapel() {
+  const f = S.formPapel, marcado = document.querySelector('input[name="papel"]:checked');
+  const email = f.convite ? $("#pp-email").value.trim().toLowerCase() : f.email;
+  const erro = (m) => { $("#pp-erro").textContent = m; };
+  if (!email) return erro("Digite o e-mail da pessoa.");
+  if (!marcado) return erro("Escolha o papel.");
+  try {
+    if (marcado.value) await api("PUT", "/admin/papeis/" + encodeURIComponent(email), { papel: marcado.value });
+    else await api("DELETE", "/admin/papeis/" + encodeURIComponent(email));
+    S.formPapel = null;
+    await carregarPapeis(); S.eu = { ...S.eu, pendentes: (await api("GET", "/eu")).pendentes };
+    render();
+    toast(f.convite ? "Convite registrado." : !marcado.value ? "Convite cancelado." : marcado.value === "sem_acesso" ? "Acesso barrado." : f.pendente ? "Acesso liberado." : "Papel alterado.");
+  } catch (e) { erro(e.message); }
+}
+function redesenharLista() {
+  const l = $("#adm-lista"); if (l) l.innerHTML = listaAdminHtml();
+  const c = $("#adm-conta"); if (c) c.textContent = contaTexto();
+}
 async function carregarPapeis() { S.papeis = await api("GET", "/admin/papeis"); }
+
+/* quem abriu o Montador e ainda não recebeu papel (ou foi barrado): só este aviso */
+function telaPendente() {
+  const p = S.eu, barrado = p.papel === "sem_acesso";
+  return `${topo()}<main class="entrada"><div class="caixa"><div class="modal-ic espera ${barrado ? "barrado" : ""}">${ic(barrado ? "lock" : "clock")}</div>
+    <h1>${barrado ? "Sem acesso ao Montador" : "Aguardando liberação"}</h1>
+    <p>Olá, ${esc(String(p.nome || "").split(" ")[0])}. ${barrado ? "Um administrador não liberou o seu acesso ao Montador de Catálogo. Se achar que é engano, fale com ele."
+      : "Seu pedido de acesso ao Montador de Catálogo foi registrado. Os administradores já veem o pedido e vão definir o que você pode fazer aqui."}</p>
+    ${barrado ? ajudaHtml("semacesso") : ajudaHtml("espera")}
+    <button class="btn forte" data-a="recarregar">Verificar de novo</button>
+  </div></main>${rodape()}`;
+}
 
 /* ───────────── editor ─────────────
    Nada é gravado sozinho: o catálogo (e as alterações) só vão para o servidor no botão Salvar.
@@ -404,10 +513,11 @@ async function irLista() {
   try { await carregarLista(); } catch (e) { toast(e.message); S.lista = []; }
   render();
 }
-async function abrirAdmin() {
+/** Abre a Administração; o sininho abre já filtrada em "Aguardando liberação". */
+async function abrirAdmin(filtro) {
   if (S.cat && !(await podeSair())) return;
   fecharEditor();
-  S.tela = "admin"; S.papeis = null; S.ajuda = false;
+  S.tela = "admin"; S.papeis = null; S.ajuda = false; S.admFiltro = filtro || "todos"; S.admBusca = "";
   if (location.hash) history.pushState(null, "", location.pathname);
   render(); await carregarPapeis(); render();
 }
@@ -528,15 +638,18 @@ async function enviarCarregar() {
 }
 
 /* ───────────── render e eventos ───────────── */
+/** Aguardando liberação ou sem acesso: a pessoa só vê o aviso. */
+const semEntrada = () => Boolean(S.eu) && (S.eu.papel === "pendente" || S.eu.papel === "sem_acesso");
 function render() {
   let html;
   if (S.erro) html = `${topo()}<main class="entrada"><div class="caixa"><h1>Montador de Catálogo</h1><div class="aviso-caixa">${ic("info")} <b>Não foi possível abrir.</b><br>${esc(S.erro)}</div>
       <button class="btn" data-a="recarregar">Tentar de novo</button></div></main>${rodape()}`;
   else if (!S.eu) html = `${topo()}<main class="entrada"><div class="vazio">Carregando…</div></main>`;
+  else if (semEntrada()) html = telaPendente();
   else html = S.tela === "admin" ? telaAdmin() : S.cat ? telaEditor() : telaLista();
   const foco = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset : {};
   const rolagem = scrollY;
-  $("#app").innerHTML = html + janelaCarregar() + janela() + ajudaJanela();
+  $("#app").innerHTML = html + janelaCarregar() + janela() + janelaPapel() + ajudaJanela();
   document.title = (S.eu && S.eu.ambiente === "teste" ? "[TESTE] " : "") + (S.cat ? (S.cat.titulo || "Catálogo novo") + " · " : "") + "Montador de Catálogo";
   document.querySelectorAll("[data-fundo]").forEach((el) => el.style.setProperty("--fundo", el.dataset.fundo));
   const pg = $("#paginas"); if (pg) pg.style.setProperty("--r", proporcao());
@@ -588,12 +701,16 @@ document.addEventListener("click", async (e) => {
       case "ver": { const r = await api("GET", "/catalogos/" + k); visualizar(r.dados); return; }
       case "salvar": await salvarCatalogo(); return;
       case "redefinir": await redefinir(); return;
-      case "admin": await abrirAdmin(); return;
+      case "admin": await abrirAdmin("todos"); return;
+      case "pendentes": await abrirAdmin("pendente"); return;
       case "sair-admin": S.tela = null; S.ajuda = false; await irLista(); return;
-      case "papel-add": { const email = $("#novo-email").value.trim().toLowerCase(), papel = $("#novo-papel").value;
-        if (!email) { toast("Digite o e-mail da pessoa."); return; }
-        await api("PUT", "/admin/papeis/" + encodeURIComponent(email), { papel }); await carregarPapeis(); render(); toast("Permissão adicionada."); return; }
-      case "papel-tirar": await api("DELETE", "/admin/papeis/" + encodeURIComponent(k)); await carregarPapeis(); render(); toast("Permissão retirada: a pessoa volta a ser leitora."); return;
+      case "papel-editar": { const p = S.papeis.pessoas.find((x) => x.email === k); if (!p) return;
+        S.formPapel = { email: p.email, nome: p.nome, papel: p.papel === "pendente" ? "leitor" : p.papel, pendente: p.papel === "pendente", convidado: !p.ultimo_acesso };
+        render(); return; }
+      case "convidar": S.formPapel = { convite: true, papel: "leitor" }; render(); { const c = $("#pp-email"); if (c) c.focus(); } return;
+      case "papel-salvar": await salvarPapel(); return;
+      case "fecha-form": S.formPapel = null; render(); return;
+      case "fecha-form-fundo": if (e.target === el) { S.formPapel = null; render(); } return;
       case "lista": await irLista(); return;
       case "duplicar": { await api("POST", `/catalogos/${k}/duplicar`); await carregarLista(); render(); toast("Cópia criada."); return; }
       case "excluir": { const c = S.lista.find((x) => x.id === k);
@@ -613,11 +730,7 @@ document.addEventListener("click", async (e) => {
 
 document.addEventListener("change", async (e) => {
   const t = e.target;
-  if (t.dataset.papel) {
-    try { await api("PUT", "/admin/papeis/" + encodeURIComponent(t.dataset.papel), { papel: t.value }); await carregarPapeis(); toast("Papel alterado."); }
-    catch (err) { toast(err.message); }
-    render(); return;
-  }
+  if (t.id === "adm-filtro") { S.admFiltro = t.value; redesenharLista(); return; }
   if (t.id === "carregar-arq") { const arq = t.files[0]; t.value = ""; try { await escolherCarregar(arq); } catch (err) { toast(err.message); } return; }
   if (!S.cat) return;
   if (t.id === "varias") {
@@ -648,6 +761,7 @@ document.addEventListener("change", async (e) => {
 });
 document.addEventListener("input", (e) => {
   const t = e.target;
+  if (t.id === "adm-busca") { S.admBusca = t.value; redesenharLista(); return; }
   if (t.id === "cc-titulo" && S.formCarregar) { S.formCarregar.titulo = t.value; return; }
   if (!S.cat) return;
   if (t.dataset.c) { S.cat[t.dataset.c] = t.value; tocou(); }
@@ -656,7 +770,7 @@ document.addEventListener("input", (e) => {
 });
 document.addEventListener("toggle", (e) => { if (e.target.matches && e.target.matches("details.bloco-ed")) S.aparenciaAberta = e.target.open; }, true);
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !S.previa) { if (S.ajuda) fecharAjuda(); else if (S.modal) fecharModal(-1); else if (S.formCarregar) fecharCarregar(); else if (S.credito) { S.credito = false; render(); } }
+  if (e.key === "Escape" && !S.previa) { if (S.ajuda) fecharAjuda(); else if (S.formPapel) { S.formPapel = null; render(); } else if (S.modal) fecharModal(-1); else if (S.formCarregar) fecharCarregar(); else if (S.credito) { S.credito = false; render(); } }
   if (e.key === "Enter" && e.target.id === "cc-titulo") { e.preventDefault(); enviarCarregar(); }
   // Ctrl+S (ou Cmd+S) salva o catálogo aberto
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && S.cat && !S.previa && !S.modal) { e.preventDefault(); salvarCatalogo(); }
@@ -667,6 +781,7 @@ addEventListener("popstate", () => rota());
 
 /** Onde o endereço diz que estamos (lista, um catálogo ou catálogo novo). Também trata o Voltar do navegador. */
 async function rota() {
+  if (semEntrada()) return;
   const h = location.hash, m = /^#\/c\/([A-Za-z0-9_-]+)$/.exec(h);
   if (S.previa) S.previa.fechar();
   const atual = S.cat ? (S.id ? "#/c/" + S.id : "#/novo") : null;
@@ -688,5 +803,11 @@ async function rota() {
 
 try { const t = localStorage.getItem("montador-tema"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch { /* sem armazenamento */ }
 render();
+// o sininho se atualiza sozinho a cada minuto, sem redesenhar a tela (para não atrapalhar quem está digitando)
+setInterval(async () => {
+  if (!S.eu || S.eu.papel !== "admin" || document.hidden) return;
+  try { const eu = await api("GET", "/eu"); if (eu.pendentes !== S.eu.pendentes) { S.eu.pendentes = eu.pendentes; const sino = $(".sino"); if (sino) sino.outerHTML = sinoHtml(); } }
+  catch { /* tenta de novo no próximo minuto */ }
+}, 60 * 1000);
 api("GET", "/eu").then((eu) => { S.eu = eu; render(); return rota(); }).catch((e) => { S.erro = e.message; render(); });
 })();

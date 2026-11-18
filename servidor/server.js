@@ -10,6 +10,9 @@
  *  - Login: este servidor NÃO tem tela de login. Ou ele roda só para você (modo local, todo mundo é administrador),
  *    ou fica atrás de um porteiro (proxy reverso com login) que informa o e-mail da pessoa num cabeçalho.
  *    Veja IDENTIDADE_CABECALHO e ADMINS abaixo, e o LEIA-ME.
+ *  - Pessoas (1.4.0): quem abre o Montador entra sozinho na lista de pessoas (tabela pessoas), com a data do primeiro e
+ *    do último acesso. Sem papel, fica "aguardando liberação" e só vê um aviso; os administradores veem o pedido no
+ *    sininho e liberam na Administração.
  */
 "use strict";
 
@@ -46,7 +49,7 @@ const MAX_PAGINAS = 300;
 const MAX_CARREGAR = Math.round((Number(process.env.CATALOGO_MAX_CARREGAR_MB) || 60) * 1024 * 1024);
 
 if (!IDENTIDADE_CABECALHO) console.warn("[INICIO] MODO LOCAL: sem identificação. Quem alcançar este endereço é administrador.");
-else if (!ADMINS.length) console.warn("[INICIO] ADMINS vazio: ninguém consegue abrir a Administração.");
+else if (!ADMINS.length) console.warn("[INICIO] ADMINS vazio: ninguém consegue abrir a Administração nem liberar quem chega (todos ficam aguardando liberação).");
 
 class Erro extends Error {
     constructor(mensagem, status = 400) { super(mensagem); this.status = status; }
@@ -66,6 +69,8 @@ db.exec(`
         id TEXT PRIMARY KEY, catalogo TEXT NOT NULL, proporcao REAL NOT NULL DEFAULT 0, bytes INTEGER NOT NULL,
         criado_por TEXT NOT NULL, criado_em TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS imagens_catalogo ON imagens (catalogo);
+    CREATE TABLE IF NOT EXISTS pessoas (
+        email TEXT PRIMARY KEY, nome TEXT NOT NULL DEFAULT '', primeiro_acesso TEXT NOT NULL, ultimo_acesso TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS papeis (
         email TEXT PRIMARY KEY, papel TEXT NOT NULL, criado_por TEXT NOT NULL, criado_em TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS historico (
@@ -152,13 +157,56 @@ function limparImagensSoltas(id, dados) {
 
 const nomeDoEmail = (email) => email.split("@")[0].split(/[._-]+/).filter(Boolean).map((p) => p[0].toUpperCase() + p.slice(1)).join(" ");
 
+const EMAIL_LOCAL = "local@exemplo.local";
+const EMAIL_OK = /^[^@\s]+@[^@\s]+$/;
+/** Quem é administrador: no modo local, a pessoa local; com porteiro, quem está em ADMINS. Não se muda pela tela. */
+const ehAdmin = (email) => IDENTIDADE_CABECALHO ? ADMINS.includes(email) : email === EMAIL_LOCAL;
+
 /** Modo local: uma pessoa só, administradora. Com porteiro: o e-mail vem do cabeçalho combinado. */
 async function identificar(req) {
-    if (!IDENTIDADE_CABECALHO) return { email: "local@exemplo.local", nome: "Você", admin: true };
+    if (!IDENTIDADE_CABECALHO) return { email: EMAIL_LOCAL, nome: "Você", admin: true };
     const email = normal(req.headers[IDENTIDADE_CABECALHO]);
-    if (!/^[^@\s]+@[^@\s]+$/.test(email)) throw new Erro("Sem identificação do login. Abra o Montador pelo endereço oficial.", 401);
-    return { email, nome: nomeDoEmail(email), admin: ADMINS.includes(email) };
+    if (!EMAIL_OK.test(email)) throw new Erro("Sem identificação do login. Abra o Montador pelo endereço oficial.", 401);
+    return { email, nome: nomeDoEmail(email), admin: ehAdmin(email) };
 }
+
+/* ───────────────── as pessoas do Montador e o papel de cada uma (1.4.0) ─────────────────
+   Não há cadastro: a pessoa entra na lista sozinha no primeiro acesso, pelo e-mail que o porteiro informa (ou a
+   pessoa local, no modo local). Quem não tem papel fica aguardando liberação até um administrador escolher o papel.
+     admin       administrador pela configuração (ADMINS, ou a pessoa local no modo local). Não se muda pela tela.
+     editor      cria, edita, duplica, carrega e exclui catálogos
+     leitor      vê, visualiza e compartilha
+     sem_acesso  um administrador barrou: só vê um aviso e não conta no sininho
+     pendente    abriu o Montador e ainda não tem papel: aguardando liberação (conta no sininho) */
+const PAPEIS = ["leitor", "editor", "sem_acesso"];
+const NOME_PAPEL = { leitor: "leitor", editor: "editor", sem_acesso: "sem acesso" };
+
+/** Anota quem abriu o Montador: no primeiro acesso entra na lista; depois, o último acesso no máximo uma vez por hora. */
+function anotarAcesso(eu) {
+    const p = um("SELECT ultimo_acesso FROM pessoas WHERE email = ?", eu.email);
+    if (!p) rodar("INSERT INTO pessoas (email, nome, primeiro_acesso, ultimo_acesso) VALUES (?, ?, ?, ?)", eu.email, eu.nome, agora(), agora());
+    else if (Date.now() - Date.parse(p.ultimo_acesso) > 60 * 60 * 1000) rodar("UPDATE pessoas SET nome = ?, ultimo_acesso = ? WHERE email = ?", eu.nome, agora(), eu.email);
+}
+
+/** Todas as pessoas: quem já abriu (tabela pessoas), quem foi convidado (tabela papeis) e os administradores da configuração. */
+function pessoasDoMontador() {
+    const mapa = new Map();
+    const por = (email) => {
+        if (!mapa.has(email)) mapa.set(email, { email, nome: nomeDoEmail(email), primeiro_acesso: null, ultimo_acesso: null });
+        return mapa.get(email);
+    };
+    if (IDENTIDADE_CABECALHO) for (const e of ADMINS) por(e);
+    for (const p of todos("SELECT * FROM pessoas")) Object.assign(por(p.email), { nome: p.nome || nomeDoEmail(p.email), primeiro_acesso: p.primeiro_acesso, ultimo_acesso: p.ultimo_acesso });
+    const papeis = new Map(todos("SELECT * FROM papeis").map((r) => [r.email, r]));
+    for (const e of papeis.keys()) por(e);
+    return [...mapa.values()].map((x) => {
+        const admin = ehAdmin(x.email), r = admin ? null : papeis.get(x.email);
+        const papel = admin ? "admin" : r && PAPEIS.includes(r.papel) ? r.papel : "pendente";
+        return { ...x, papel, pediu_em: papel === "pendente" ? x.primeiro_acesso : null,
+            definido_por: r ? r.criado_por : "", definido_em: r ? r.criado_em : "" };
+    }).sort((a, b) => (a.nome || a.email).localeCompare(b.nome || b.email, "pt-BR"));
+}
+const contarPendentes = () => pessoasDoMontador().filter((p) => p.papel === "pendente").length;
 
 /* ─────────────────────────────── o arquivo do cliente ─────────────────────────────── */
 
@@ -360,11 +408,18 @@ async function atender(req, res) {
     if (req.method !== "GET" && req.headers["x-catalogo"] !== "1") throw new Erro("Pedido recusado.", 403);
     const [, recurso, id, sub] = partes;
 
-    // Papéis:
-    //   administrador: quem está em ADMINS (ou todo mundo, no modo local). Faz tudo e decide o papel de cada pessoa.
-    //   editor: cria, edita, duplica e exclui catálogos.
-    //   leitor: só vê, visualiza e compartilha. É o papel de quem ainda não recebeu outro.
-    eu.papel = eu.admin ? "admin" : ((um("SELECT papel FROM papeis WHERE email = ?", eu.email) || {}).papel || "leitor");
+    // Papéis (veja "as pessoas do Montador" acima):
+    //   administrador: quem está em ADMINS (ou a pessoa local, no modo local). Faz tudo e decide o papel de cada pessoa.
+    //   editor: cria, edita, duplica, carrega e exclui catálogos.
+    //   leitor: só vê, visualiza e compartilha.
+    //   aguardando liberação (pendente) e sem acesso: só conseguem chamar GET /api/eu, para a tela mostrar o aviso.
+    anotarAcesso(eu);
+    const guardado = (um("SELECT papel FROM papeis WHERE email = ?", eu.email) || {}).papel;
+    eu.papel = eu.admin ? "admin" : PAPEIS.includes(guardado) ? guardado : "pendente";
+    if ((eu.papel === "pendente" || eu.papel === "sem_acesso") && !(recurso === "eu" && req.method === "GET" && !id)) {
+        throw new Erro(eu.papel === "pendente" ? "Seu acesso ao Montador de Catálogo está aguardando liberação por um administrador."
+            : "Seu acesso ao Montador de Catálogo não foi liberado. Fale com um administrador do Montador.", 403);
+    }
     const exigirEditor = () => {
         if (eu.papel === "leitor") throw new Erro("Você pode ver e compartilhar os catálogos, mas não criar, editar ou excluir. Peça a um administrador do Montador.", 403);
     };
@@ -373,24 +428,28 @@ async function atender(req, res) {
         if (eu.papel !== "admin") throw new Erro("Só administradores mexem nas permissões do Montador.", 403);
         if (id !== "papeis") return responder(res, 404, { erro: "Rota desconhecida." });
         if (req.method === "GET" && !sub) {
-            return responder(res, 200, { papeis: todos("SELECT email, papel, criado_por, criado_em FROM papeis ORDER BY email"),
+            return responder(res, 200, { pessoas: pessoasDoMontador(),
                 historico: todos("SELECT quando, quem, alvo, detalhe FROM historico WHERE alvo LIKE 'permissão:%' ORDER BY id DESC LIMIT 50") });
         }
         const alvo = normal(sub);
-        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(alvo)) throw new Erro("E-mail inválido.");
+        if (!EMAIL_OK.test(alvo)) throw new Erro("E-mail inválido.");
+        if (ehAdmin(alvo)) throw new Erro("Essa pessoa é administradora pela configuração do servidor (ADMINS). O papel dela não muda por aqui.");
+        const jaEntrou = Boolean(um("SELECT 1 AS ok FROM pessoas WHERE email = ?", alvo));
         if (req.method === "PUT") {
             const corpo = await lerJson(req);
-            const papel = corpo.papel === "editor" ? "editor" : corpo.papel === "leitor" ? "leitor" : null;
-            if (!papel) throw new Erro("Escolha o papel: leitor ou editor.");
+            const papel = PAPEIS.includes(corpo.papel) ? corpo.papel : null;
+            if (!papel) throw new Erro("Escolha o papel: leitor, editor ou sem acesso.");
             const antes = (um("SELECT papel FROM papeis WHERE email = ?", alvo) || {}).papel;
             rodar("INSERT INTO papeis (email, papel, criado_por, criado_em) VALUES (?, ?, ?, ?) ON CONFLICT(email) DO UPDATE SET papel = excluded.papel, criado_por = excluded.criado_por, criado_em = excluded.criado_em",
                 alvo, papel, eu.email, agora());
-            if (antes !== papel) registrar(eu.email, "permissão: " + alvo, `${papel}${antes ? " (antes: " + antes + ")" : " (convidado)"}`);
+            const como = antes ? "antes: " + (NOME_PAPEL[antes] || antes) : !jaEntrou ? "convidado" : papel === "sem_acesso" ? "pedido recusado" : "acesso liberado";
+            if (antes !== papel) registrar(eu.email, "permissão: " + alvo, `${NOME_PAPEL[papel]} (${como})`);
             return responder(res, 200, { ok: true });
         }
         if (req.method === "DELETE") {
+            // tira o papel: quem já abriu o Montador volta a aguardar liberação; quem só tinha convite sai da lista
             const r = rodar("DELETE FROM papeis WHERE email = ?", alvo);
-            if (r.changes) registrar(eu.email, "permissão: " + alvo, "retirada (volta a ser leitor)");
+            if (r.changes) registrar(eu.email, "permissão: " + alvo, jaEntrou ? "papel retirado (volta a aguardar liberação)" : "convite cancelado");
             return responder(res, 200, { ok: true });
         }
         return responder(res, 404, { erro: "Rota desconhecida." });
@@ -399,7 +458,8 @@ async function atender(req, res) {
 
     switch (rota) {
         case "GET eu":
-            return responder(res, 200, { ...eu, ambiente: AMBIENTE, versao: VERSAO, empresa: NOME_EMPRESA, temLogo: fs.existsSync(path.join(PASTA_PUBLICA, "logo.png")), padrao: PADRAO, maxPaginas: MAX_PAGINAS, maxCarregar: MAX_CARREGAR });
+            // pendentes: o número do sininho dos administradores (quem abriu o Montador e espera um papel)
+            return responder(res, 200, { ...eu, pendentes: eu.papel === "admin" ? contarPendentes() : 0, ambiente: AMBIENTE, versao: VERSAO, empresa: NOME_EMPRESA, temLogo: fs.existsSync(path.join(PASTA_PUBLICA, "logo.png")), padrao: PADRAO, maxPaginas: MAX_PAGINAS, maxCarregar: MAX_CARREGAR });
 
         case "POST carregar": {
             // Carregar catálogo: o corpo é o .html escolhido; o nome do catálogo vem em ?titulo= (obrigatório)

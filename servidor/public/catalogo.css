@@ -111,8 +111,38 @@ input[type=color] { width: 56px; height: 38px; border: 1px solid var(--border); 
 /* a chave liga-desliga fica à esquerda, com o texto ao lado  */
 .sw { justify-content: flex-start; border-bottom: 0; }
 /* administração */
-.convite { margin-bottom: 16px; }
-.convite select.btn { padding: 8px 10px; }
 .sub-titulo { font-size: 15px; color: var(--marca); margin: 24px 0 10px; }
-.painel-adm .item select.btn.mini { max-width: 230px; }
-@media (max-width: 640px) { .painel-adm .item select.btn.mini { max-width: none; flex: 1 1 100%; } }
+
+/* administração (1.4.0): barra de busca e filtro, lista de todas as pessoas, pedidos aguardando liberação */
+.adm-barra { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.busca { flex: 1 1 260px; min-width: 0; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 0 12px; color: var(--muted); }
+.busca:focus-within { border-color: var(--accent); }
+.busca input { flex: 1; min-width: 0; border: 0; background: none; padding: 9px 0; outline: none; color: var(--text); }
+.adm-barra select.btn { padding: 8px 10px; max-width: 100%; }
+.painel-adm .item .sub, .painel-adm .item .tt { overflow-wrap: anywhere; }
+.item.pendente { border-color: color-mix(in srgb, var(--warn) 55%, var(--border)); background: color-mix(in srgb, var(--warn) 7%, var(--surface)); }
+.item .sub.fixo { flex: none; font-size: 12.5px; }
+.pill.warn { border-color: color-mix(in srgb, var(--warn) 45%, var(--border)); }
+.pill.no { border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+/* sininho */
+.ib.sino { position: relative; }
+.ib.sino.tem { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, var(--border)); }
+.sino-n { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+/* janela de papel */
+.pp-quem { margin: 0 0 14px; display: grid; gap: 2px; }
+.pp-quem span { color: var(--muted); font-size: 13.5px; overflow-wrap: anywhere; }
+.opcoes { display: grid; gap: 8px; margin-bottom: 10px; }
+.opcao { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; cursor: pointer; background: var(--surface-2); }
+.opcao:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.opcao:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.opcao input { margin: 3px 0 0; width: 16px; height: 16px; flex: none; accent-color: var(--accent); }
+.opcao b { display: block; font-size: 14.5px; }
+.opcao small { display: block; color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 2px; }
+/* tela de quem aguarda liberação (ou está sem acesso) */
+.modal-ic.espera { background: color-mix(in srgb, var(--warn) 18%, var(--surface)); color: var(--warn); }
+.modal-ic.espera.barrado { background: color-mix(in srgb, var(--danger) 14%, var(--surface)); color: var(--danger); }
+.caixa .ajuda-linha { margin: 0 0 4px; }
+@media (max-width: 640px) {
+  .adm-barra .btn { flex: 1 1 auto; justify-content: center; }
+  .painel-adm .item .btn.mini { margin-left: auto; }
+}

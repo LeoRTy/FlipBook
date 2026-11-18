@@ -24,8 +24,15 @@ catálogo de outro computador.
   Compartilhar deste Montador ou da página do FlipBook (a versão de arquivo único). Exemplo: alguém de fora monta o
   catálogo na página do FlipBook e manda o arquivo; você carrega e passa a ter essa versão para editar ou reenviar.
   Veja "Carregar catálogo" abaixo.
-- **Papéis por pessoa:** leitor (vê, visualiza e compartilha), editor (cria, edita, duplica e exclui) e
-  administrador (dá os papéis, convidando pelo e-mail).
+- **Papéis por pessoa:** leitor (vê, visualiza e compartilha), editor (cria, edita, duplica, carrega e exclui) e
+  administrador (dá os papéis). Veja "Pessoas e papéis" abaixo.
+- **Aguardando liberação** (1.4.0): quem abre o Montador sem papel não vê nada além de um aviso de que o pedido de
+  acesso foi registrado, e espera um administrador liberar.
+- **Sininho** (1.4.0): no topo, só para administradores, com o número de pedidos esperando. Clicar abre a
+  Administração já filtrada nos pedidos, com o botão **Liberar** em cada um.
+- **Lista de todas as pessoas** (1.4.0) na Administração: quem já abriu o Montador entra sozinho na lista, com a data
+  do primeiro e do último acesso. Busca por nome ou e-mail, filtro por papel e **Editar papel** / **Liberar** em cada
+  pessoa.
 - **Ajuda na tela:** um "i" em cada tela explica para que serve e como usar.
 - Tema claro e escuro, e layout que funciona no celular.
 
@@ -72,7 +79,7 @@ O servidor **não tem tela de login**. Para várias pessoas, coloque na frente u
 | Variável | Para quê |
 |---|---|
 | `IDENTIDADE_CABECALHO` | nome do cabeçalho em que o porteiro manda o e-mail, por exemplo `x-forwarded-email`. Vazio = modo local |
-| `ADMINS` | e-mails dos administradores, separados por vírgula |
+| `ADMINS` | e-mails dos administradores, separados por vírgula. Sem ninguém aqui, ninguém libera quem chega |
 | `NOME_EMPRESA` | nome que aparece no topo |
 | `PORT` | porta (padrão 8080) |
 | `DADOS` | pasta do banco e das imagens |
@@ -81,9 +88,56 @@ O servidor **não tem tela de login**. Para várias pessoas, coloque na frente u
 passando pelo porteiro. Se a porta ficar aberta para fora, qualquer pessoa manda o cabeçalho que quiser e entra como
 quem bem entender.
 
-Quem entra sem papel definido é **leitor**. Um administrador abre o selo "Administrador", no topo, digita o e-mail da
-pessoa e escolhe Leitor ou Editor. O convite não envia e-mail: o papel passa a valer na próxima vez que a pessoa
-abrir o Montador.
+## Pessoas e papéis
+
+Não há cadastro de pessoas: quem abre o Montador entra **sozinho na lista**, pelo e-mail que o porteiro informa, com a
+data do primeiro e do último acesso (o último é anotado no máximo uma vez por hora). Tudo fica no SQLite do próprio
+Montador (tabelas `pessoas` e `papeis`).
+
+| Papel | O que faz | Quem é |
+|---|---|---|
+| **Aguardando liberação** | nada: só vê o aviso "Aguardando liberação", com o botão "Verificar de novo" | quem abriu o Montador e ainda não recebeu papel |
+| **Leitor** | vê a biblioteca, visualiza e compartilha | quem um administrador marcou como leitor |
+| **Editor** | tudo do leitor, e também cria, edita, duplica, carrega e exclui | quem um administrador marcou como editor |
+| **Administrador** | tudo do editor, e abre a Administração | quem está em `ADMINS` (no modo local, quem abrir). Não muda pela tela |
+| **Sem acesso** | nada: só vê o aviso "Sem acesso ao Montador" | quem um administrador barrou (ou cujo pedido ele recusou) |
+
+**O caminho de um pedido**
+
+1. A pessoa passa pelo porteiro e abre o Montador. Como não tem papel, vê "Aguardando liberação". O Montador anota o
+   acesso e a pessoa entra na lista.
+2. Os administradores veem o **sininho** no topo com o número de pedidos (ele se atualiza sozinho a cada minuto).
+   Clicar nele abre a Administração já filtrada em "Aguardando liberação".
+3. O administrador clica em **Liberar**, escolhe Leitor ou Editor (ou Sem acesso, para recusar) e confirma. A pessoa
+   clica em "Verificar de novo" (ou abre de novo) e entra. Nenhum e-mail é enviado.
+
+**A Administração** (selo "Administrador", no topo):
+
+- **Lista de todas as pessoas:** quem já abriu o Montador, quem foi convidado e os administradores de `ADMINS`, com o
+  papel, o primeiro e o último acesso e quem deu o papel. Os pedidos aguardando ficam destacados.
+- **Busca** por nome ou e-mail e **filtro** por papel (Todos, Aguardando liberação, Leitores, Editores,
+  Administradores, Sem acesso), com a quantidade em cada um.
+- **Liberar** (no pedido) e **Editar papel** (nos outros) abrem uma janela com Leitor, Editor e Sem acesso. Quem foi
+  convidado e ainda não entrou tem **Cancelar convite** no lugar de Sem acesso.
+- **Convidar por e-mail:** dá o papel antes de a pessoa entrar; quando ela abrir, entra direto, sem aguardar.
+- **Últimas mudanças:** as 50 últimas alterações de papel, com quem fez.
+
+**Sem acesso** não substitui o porteiro: quem não deve chegar ao Montador de jeito nenhum se tira no login da
+empresa. Sem acesso serve para recusar um pedido sem ele ficar para sempre no sininho.
+
+**No servidor:** a tela esconde o que a pessoa não pode usar, e o servidor recusa de qualquer forma (403). Quem
+aguarda liberação ou está sem acesso só consegue chamar `GET /api/eu`. A resposta de `/api/eu` traz `papel`
+(`admin`, `editor`, `leitor`, `pendente` ou `sem_acesso`) e, para administradores, `pendentes` (o número do sininho).
+Rotas da Administração, só para administradores: `GET /api/admin/papeis` (pessoas e histórico),
+`PUT /api/admin/papeis/<e-mail>` com `{"papel": "leitor" | "editor" | "sem_acesso"}` e
+`DELETE /api/admin/papeis/<e-mail>` (tira o papel: quem já entrou volta a aguardar; quem só tinha convite sai da lista).
+
+### Atualizando da 1.3
+
+Até a 1.3, quem entrava sem papel virava **leitor** sozinho. A partir da 1.4.0, fica **aguardando liberação**. Depois
+de atualizar, quem era leitor sem papel definido vai ver o aviso na próxima vez que abrir, e o pedido aparece no
+sininho: é só liberar como Leitor. Quem já tinha papel (editor ou leitor dado por um administrador) continua igual.
+No modo local nada muda: quem abre é administrador.
 
 ## Carregar catálogo
 
@@ -128,10 +182,12 @@ primeira versão do FlipBook (`versao-antiga/`), que guarda as imagens numa past
 node testes/teste_api.js
 ```
 
-Sobe um servidor descartável numa pasta temporária e confere 75 pontos: criar, salvar, enviar imagem, duplicar,
-excluir, gerar o arquivo do cliente, edição simultânea, papéis, recusas e o Carregar catálogo (arquivo deste
+Sobe um servidor descartável numa pasta temporária e confere 99 pontos: criar, salvar, enviar imagem, duplicar,
+excluir, gerar o arquivo do cliente, edição simultânea, papéis, recusas, o Carregar catálogo (arquivo deste
 Montador e da página do FlipBook, textos com HTML, imagens ruins, arquivos que não são catálogo, grande demais e quem
-não pode).
+não pode) e as pessoas (1.4.0): quem chega fica aguardando liberação, o sininho conta, liberar dá o papel e tira do
+sininho, convite, sem acesso, cancelar convite, e quem não é administrador não lista pessoas nem libera. No fim sobe
+um segundo servidor no modo local para conferir que nele ninguém aguarda.
 
 ## Limites
 

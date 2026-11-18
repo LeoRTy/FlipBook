@@ -43,7 +43,7 @@ versao-antiga/    primeira versão do projeto, feita com StPageFlip
 
 ## Versão com servidor
 
-Para uma equipe trabalhar nos mesmos catálogos, a pasta [`servidor`](servidor/) traz o Montador com os catálogos guardados no servidor: biblioteca (criar, editar, duplicar, excluir e carregar um catálogo de um arquivo .html), salvar só no botão, aparência por catálogo, papéis por pessoa (leitor, editor, administrador) e o arquivo do cliente gerado sempre da última versão salva. Node sem dependências e banco SQLite. Veja o [LEIA-ME da pasta](servidor/README.md).
+Para uma equipe trabalhar nos mesmos catálogos, a pasta [`servidor`](servidor/) traz o Montador com os catálogos guardados no servidor: biblioteca (criar, editar, duplicar, excluir e carregar um catálogo de um arquivo .html), salvar só no botão, aparência por catálogo, papéis por pessoa (leitor, editor, administrador), quem chega fica aguardando liberação (com sininho e lista de pessoas para o administrador liberar) e o arquivo do cliente gerado sempre da última versão salva. Node sem dependências e banco SQLite. Veja o [LEIA-ME da pasta](servidor/README.md).
 
 ## Versão anterior
 

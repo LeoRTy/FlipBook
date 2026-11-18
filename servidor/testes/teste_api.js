@@ -13,6 +13,8 @@ const BASE = `http://127.0.0.1:${PORTA}`;
 const ANA = "ana@empresa.example";
 const BIA = "bia@empresa.example";
 const CAIO = "caio@empresa.example";
+const DANI = "dani@empresa.example";   // convidada antes de entrar
+const EVA = "eva@empresa.example";     // convite cancelado
 const pasta = fs.mkdtempSync(path.join(os.tmpdir(), "catalogo-teste-"));
 // menor JPEG válido (1x1)
 const JPEG = Buffer.from("/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQEAAD8A0s8g/9k=", "base64");
@@ -44,19 +46,56 @@ async function testes() {
     r = await pedir(ANA, "GET", "/api/eu");
     confere("identifica quem entrou e manda os padrões de aparência", r.status === 200 && r.dados.email === ANA && r.dados.padrao.destaque === "#c2410c", JSON.stringify(r.dados));
 
-    // papéis: ANA é a administradora (login de teste); BIA vira editora; CAIO fica sem papel (leitor)
+    // papéis: ANA é a administradora (login de teste); BIA vira editora; CAIO é liberado como leitor
     confere("quem é administrador recebe o papel de administrador", (await pedir(ANA, "GET", "/api/eu")).dados.papel === "admin");
-    confere("quem não tem papel é leitor", (await pedir(CAIO, "GET", "/api/eu")).dados.papel === "leitor");
+    // 1.4.0: quem abre sem papel fica aguardando liberação (antes entrava como leitor)
+    r = await pedir(CAIO, "GET", "/api/eu");
+    confere("quem abre sem papel fica aguardando liberação", r.status === 200 && r.dados.papel === "pendente" && r.dados.pendentes === 0, JSON.stringify(r.dados));
+    r = await pedir(CAIO, "GET", "/api/catalogos");
+    confere("quem aguarda liberação não vê os catálogos", r.status === 403 && /aguardando liberação/.test(r.dados.erro), JSON.stringify(r.dados));
+    r = await pedir(CAIO, "POST", "/api/catalogos", { titulo: "Não pode" });
+    confere("quem aguarda liberação não cria catálogo", r.status === 403 && /aguardando liberação/.test(r.dados.erro), JSON.stringify(r.dados));
+    r = await pedir(CAIO, "GET", "/api/admin/papeis");
+    confere("quem aguarda liberação não lista as pessoas", r.status === 403 && !r.dados.pessoas, JSON.stringify(r.dados));
+    r = await pedir(CAIO, "PUT", "/api/admin/papeis/" + encodeURIComponent(CAIO), { papel: "editor" });
+    confere("quem aguarda liberação não se libera sozinho", r.status === 403 && (await pedir(CAIO, "GET", "/api/eu")).dados.papel === "pendente");
+    r = await pedir(ANA, "GET", "/api/eu");
+    confere("o sininho do administrador conta quem aguarda", r.dados.pendentes === 1, JSON.stringify(r.dados));
+    r = await pedir(ANA, "GET", "/api/admin/papeis");
+    let pc = (r.dados.pessoas || []).find((x) => x.email === CAIO);
+    confere("a pessoa entra sozinha na lista no primeiro acesso, como aguardando, com a data do primeiro e do último acesso",
+        r.status === 200 && pc && pc.papel === "pendente" && pc.nome === "Caio" && pc.pediu_em && pc.primeiro_acesso === pc.pediu_em && pc.ultimo_acesso >= pc.primeiro_acesso &&
+        r.dados.pessoas.some((x) => x.email === ANA && x.papel === "admin"), JSON.stringify(r.dados.pessoas));
     r = await pedir(BIA, "PUT", "/api/admin/papeis/" + encodeURIComponent(BIA), { papel: "editor" });
     confere("quem não é administrador não muda permissões", r.status === 403);
+    confere("o segundo pedido também entra no sininho", (await pedir(ANA, "GET", "/api/eu")).dados.pendentes === 2);
     r = await pedir(ANA, "PUT", "/api/admin/papeis/" + encodeURIComponent("sem-arroba"), { papel: "editor" });
     confere("permissão com e-mail inválido é recusada", r.status === 400);
     r = await pedir(ANA, "PUT", "/api/admin/papeis/" + encodeURIComponent(BIA), { papel: "dono" });
     confere("papel desconhecido é recusado", r.status === 400);
+    r = await pedir(ANA, "PUT", "/api/admin/papeis/" + encodeURIComponent(ANA), { papel: "leitor" });
+    confere("o papel de administrador não muda pela tela", r.status === 400 && /ADMINS/.test(r.dados.erro) && (await pedir(ANA, "GET", "/api/eu")).dados.papel === "admin", JSON.stringify(r.dados));
+    r = await pedir(ANA, "PUT", "/api/admin/papeis/" + encodeURIComponent(CAIO), { papel: "leitor" });
+    confere("administrador libera o pedido como leitor e ele sai do sininho",
+        r.status === 200 && (await pedir(CAIO, "GET", "/api/eu")).dados.papel === "leitor" && (await pedir(ANA, "GET", "/api/eu")).dados.pendentes === 1);
     r = await pedir(ANA, "PUT", "/api/admin/papeis/" + encodeURIComponent(BIA), { papel: "editor" });
-    confere("administrador convida uma pessoa como editora", r.status === 200 && (await pedir(BIA, "GET", "/api/eu")).dados.papel === "editor");
+    confere("administrador libera uma pessoa como editora e o sininho zera", r.status === 200 && (await pedir(BIA, "GET", "/api/eu")).dados.papel === "editor" && (await pedir(ANA, "GET", "/api/eu")).dados.pendentes === 0);
+    r = await pedir(ANA, "PUT", "/api/admin/papeis/" + encodeURIComponent(DANI), { papel: "editor" });
+    let pd = (await pedir(ANA, "GET", "/api/admin/papeis")).dados.pessoas.find((x) => x.email === DANI);
+    confere("convidar por e-mail põe a pessoa na lista antes de ela entrar", r.status === 200 && pd && pd.papel === "editor" && !pd.ultimo_acesso && pd.definido_por === ANA, JSON.stringify(pd));
+    confere("quem foi convidado entra direto com o papel, sem aguardar", (await pedir(DANI, "GET", "/api/eu")).dados.papel === "editor" && (await pedir(ANA, "GET", "/api/eu")).dados.pendentes === 0);
     r = await pedir(ANA, "GET", "/api/admin/papeis");
-    confere("a administração lista os papéis e o histórico", r.status === 200 && r.dados.papeis.length === 1 && r.dados.papeis[0].email === BIA && r.dados.historico.length === 1, JSON.stringify(r.dados));
+    const pb = r.dados.pessoas.find((x) => x.email === BIA);
+    confere("a administração lista todas as pessoas, com papel e histórico",
+        r.status === 200 && r.dados.pessoas.length === 4 && pb && pb.papel === "editor" && pb.definido_por === ANA && r.dados.historico.length === 3 &&
+        r.dados.historico.some((h) => /acesso liberado/.test(h.detalhe)) && r.dados.historico.some((h) => /convidado/.test(h.detalhe)), JSON.stringify(r.dados));
+    r = await pedir(CAIO, "GET", "/api/admin/papeis");
+    confere("leitor não lista as pessoas", r.status === 403 && /Só administradores/.test(r.dados.erro) && !r.dados.pessoas, JSON.stringify(r.dados));
+    r = await pedir(BIA, "GET", "/api/admin/papeis");
+    confere("editor não lista as pessoas", r.status === 403 && !r.dados.pessoas);
+    r = await pedir(BIA, "PUT", "/api/admin/papeis/" + encodeURIComponent(CAIO), { papel: "editor" });
+    confere("editor não libera nem muda o papel de ninguém", r.status === 403 && (await pedir(CAIO, "GET", "/api/eu")).dados.papel === "leitor");
+    confere("quem não é administrador não recebe o número do sininho", (await pedir(BIA, "GET", "/api/eu")).dados.pendentes === 0);
     r = await pedir(CAIO, "POST", "/api/catalogos", { titulo: "Não pode" });
     confere("leitor não cria catálogo", r.status === 403, JSON.stringify(r.dados));
 
@@ -131,8 +170,22 @@ async function testes() {
     confere("leitor não duplica", r.status === 403);
     r = await pedir(CAIO, "DELETE", "/api/catalogos/" + id);
     confere("leitor não exclui", r.status === 403);
+    // 1.4.0: retirar o papel não devolve mais a leitor; a pessoa volta a aguardar liberação
     r = await pedir(ANA, "DELETE", "/api/admin/papeis/" + encodeURIComponent(BIA));
-    confere("retirar o papel devolve a pessoa a leitora", r.status === 200 && (await pedir(BIA, "GET", "/api/eu")).dados.papel === "leitor");
+    confere("retirar o papel deixa a pessoa aguardando liberação de novo", r.status === 200 && (await pedir(BIA, "GET", "/api/eu")).dados.papel === "pendente" && (await pedir(ANA, "GET", "/api/eu")).dados.pendentes === 1);
+    r = await pedir(ANA, "PUT", "/api/admin/papeis/" + encodeURIComponent(BIA), { papel: "sem_acesso" });
+    confere("sem acesso barra a pessoa e tira o pedido do sininho",
+        r.status === 200 && (await pedir(BIA, "GET", "/api/eu")).dados.papel === "sem_acesso" && (await pedir(ANA, "GET", "/api/eu")).dados.pendentes === 0);
+    r = await pedir(BIA, "GET", "/api/catalogos");
+    confere("quem está sem acesso não vê os catálogos", r.status === 403 && /não foi liberado/.test(r.dados.erro), JSON.stringify(r.dados));
+    r = await pedir(ANA, "GET", "/api/admin/papeis");
+    confere("quem está sem acesso aparece na lista como sem acesso, e o histórico diz que o pedido foi recusado",
+        r.dados.pessoas.find((x) => x.email === BIA).papel === "sem_acesso" && r.dados.historico[0].detalhe === "sem acesso (pedido recusado)", JSON.stringify(r.dados.historico[0]));
+    r = await pedir(ANA, "PUT", "/api/admin/papeis/" + encodeURIComponent(EVA), { papel: "leitor" });
+    const comConvite = (await pedir(ANA, "GET", "/api/admin/papeis")).dados.pessoas.some((x) => x.email === EVA);
+    r = await pedir(ANA, "DELETE", "/api/admin/papeis/" + encodeURIComponent(EVA));
+    r = await pedir(ANA, "GET", "/api/admin/papeis");
+    confere("cancelar o convite de quem nunca entrou tira a pessoa da lista", comConvite && !r.dados.pessoas.some((x) => x.email === EVA) && /convite cancelado/.test(r.dados.historico[0].detalhe), JSON.stringify(r.dados.historico[0]));
 
     r = await pedir(ANA, "POST", `/api/catalogos/${id}/duplicar`);
     const copia = r.dados.id;
@@ -271,6 +324,36 @@ async function testesCarregar() {
     confere("a biblioteca tem o botão Carregar catálogo e a ajuda dele", r.texto.includes("Carregar catálogo") && r.texto.includes("Como carregar um catálogo"));
     r = await pedir(ANA, "GET", "/api/eu");
     confere("a tela recebe o limite do arquivo", r.dados.maxCarregar === 6 * 1024 * 1024, JSON.stringify(r.dados.maxCarregar));
+    r = await carregar("novo@empresa.example", doServidor, "Quem aguarda");
+    confere("quem aguarda liberação não carrega catálogo", r.status === 403 && /aguardando liberação/.test(r.dados.erro), JSON.stringify(r.dados));
+
+    // a tela (1.4.0): aviso de aguardando liberação, sininho e lista de pessoas, com a ajuda de cada uma
+    r = await pedir(ANA, "GET", "/app.js");
+    confere("a tela tem o aviso de aguardando liberação, o sininho e a lista de pessoas com busca e filtro",
+        r.texto.includes("Aguardando liberação") && r.texto.includes("Verificar de novo") && r.texto.includes("function sinoHtml") &&
+        r.texto.includes('id="adm-busca"') && r.texto.includes('id="adm-filtro"') && r.texto.includes("Liberar") && r.texto.includes("Editar papel"));
+    confere("as telas novas têm a ajuda do i", ["espera", "semacesso", "papel", "admin"].every((k) => r.texto.includes(`ajudaHtml("${k}")`)) &&
+        ["O que é aguardando liberação", "Por que estou sem acesso", "O que cada papel pode fazer"].every((t) => r.texto.includes(t)));
+}
+
+/* modo local (sem porteiro): continua sem aguardar nada; a pessoa local é a administradora */
+async function testesModoLocal() {
+    const portaLocal = PORTA + 1, pastaLocal = fs.mkdtempSync(path.join(os.tmpdir(), "catalogo-local-"));
+    const p = spawn(process.execPath, [path.join(__dirname, "..", "server.js")], {
+        env: { ...process.env, PORT: String(portaLocal), DADOS: pastaLocal, IDENTIDADE_CABECALHO: "", ADMINS: "", NODE_NO_WARNINGS: "1" }, stdio: "ignore" });
+    const base = `http://127.0.0.1:${portaLocal}`;
+    try {
+        for (let i = 0; i < 40; i++) { try { await fetch(base + "/saude"); break; } catch { await new Promise((r) => setTimeout(r, 150)); } }
+        const eu = await (await fetch(base + "/api/eu")).json();
+        const lista = await fetch(base + "/api/catalogos");
+        confere("no modo local quem abre é administrador e não aguarda liberação", eu.papel === "admin" && eu.pendentes === 0 && lista.status === 200, JSON.stringify(eu));
+        const adm = await (await fetch(base + "/api/admin/papeis")).json();
+        confere("no modo local a lista de pessoas tem só a pessoa local, como administradora", adm.pessoas.length === 1 && adm.pessoas[0].papel === "admin" && adm.pessoas[0].primeiro_acesso, JSON.stringify(adm));
+    } finally {
+        p.kill();
+        await new Promise((r) => setTimeout(r, 300));
+        try { fs.rmSync(pastaLocal, { recursive: true, force: true }); } catch { /* pasta temporária */ }
+    }
 }
 
 const proc = spawn(process.execPath, [path.join(__dirname, "..", "server.js")], {
@@ -285,7 +368,7 @@ proc.stderr.on("data", (d) => { saida += d; });
     for (let i = 0; i < 40; i++) {
         try { await fetch(BASE + "/saude"); break; } catch { await new Promise((r) => setTimeout(r, 150)); }
     }
-    try { await testes(); }
+    try { await testes(); await testesModoLocal(); }
     catch (e) { falhou++; console.log("FALHA geral:", e.stack || e.message); }
     proc.kill();
     await new Promise((r) => setTimeout(r, 300));
